@@ -58,7 +58,7 @@ Data_num = House_price_train[list(set(HoP.columns)-set(cat_var))]
 #Checking if null values present
 def check_null(Dataframe):
     '''
-    Returns columns with nulls
+    Returns columns with number of nulls
     '''
     return Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
 def barh_val(a):
@@ -73,4 +73,5 @@ def barh_val(a):
                 verticalalignment ='center')
 barh_val(check_null(Data_num))
 barh_val(check_null(Data_catg))
+#%%
 ##convert_to_catg(col = 'LandContour')
