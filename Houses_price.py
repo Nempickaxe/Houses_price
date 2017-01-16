@@ -67,7 +67,7 @@ def barh_val(Data):
     '''
     
     a= check_null(Data)
-    max_width = int((np.logical_not(Data.isnull()).sum()+ Data.isnull().sum()).mean()) 
+    max_width = int((np.logical_not(Data.isnull()).sum()+ Data.isnull().sum()).max()) 
     #is there any easier way to get count
     
     ax = a.plot.barh(color = '#FFA700', edgecolor = '#0F0A00', xlim = (0,max_width))
@@ -85,7 +85,7 @@ def barh_val(Data):
 barh_val(Data_num)
 barh_val(Data_catg)
 #%%
-#Removing columns with too many null values 
+#Removing columns with too many null values (50% values)
 rem = check_null(Data_catg)[check_null(Data_catg)/1460>.5].index
 Data_catg_significant = Data_catg.drop(rem, axis = 1)
 ##convert_to_catg(col = 'LandContour')
