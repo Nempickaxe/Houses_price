@@ -29,6 +29,12 @@ def no_null_objects(data, columns=None):
         columns = data.columns
     return data[np.logical_not(np.any(data[columns].isnull().values, axis=1))]
 
+def sales_vs_col(col , HoP = House_price_train):
+    '''
+    Plot column v/s SalePrice on y-axis
+    '''
+    sns.boxplot(x = col, y = 'SalePrice', data = HoP)
+sales_vs_col(col = 'LandContour')
 #%%
 def convert_to_catg(col, HoP = House_price_train):
    '''
@@ -64,7 +70,7 @@ def barh_val(Data):
     max_width = int((np.logical_not(Data.isnull()).sum()+ Data.isnull().sum()).max()) 
     #is there any easier way to get count
     
-    ax = a.plot.barh(color = '#FFA700', edgecolor = '#0F0A00', xlim = (0,max_width*1.1))
+    ax = a.plot.barh(color = '#FFA700', edgecolor = '#0F0A00', xlim = (0,max_width))
     ax.grid(False)
     ax.set_title('Barplot of columns with null values: number of null values')
     for p in ax.patches:
@@ -76,6 +82,8 @@ def barh_val(Data):
         ax.text(0 , p.get_y() + p.get_height()/2,  '{0}%'.format(int(percent)), color='#000000',
                 fontweight = 'bold', fontsize = 9, \
                 verticalalignment ='center')
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 1.15, box.height])
 barh_val(Data_num)
 barh_val(Data_catg)
 #%%
@@ -83,10 +91,3 @@ barh_val(Data_catg)
 rem = check_null(Data_catg)[check_null(Data_catg)/1460>.5].index
 Data_catg_significant = Data_catg.drop(rem, axis = 1)
 ##convert_to_catg(col = 'LandContour')
-#%%
-def sales_vs_col(col , HoP = House_price_train):
-    '''
-    Plot column v/s SalePrice on y-axis
-    '''
-    sns.boxplot(x = col, y = 'SalePrice', data = HoP)
-sales_vs_col(col = 'LandContour')
