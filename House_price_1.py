@@ -63,8 +63,7 @@ House_price_train["mod_Condition2"] = House_price_train["Condition2"].replace('A
 .replace(['RRNe', 'PosN'], 3)\
 .replace(['PosA', 'RRNn'], 4)
 
-train_data['summ_Condition'] = (House_price_train["mod_Condition1"] + House_price_train["mod_Condition2"])\
-.astype(str)
+train_data['summ_Condition'] = (House_price_train["mod_Condition1"] + House_price_train["mod_Condition2"])
 
 sns.boxplot(x = 'summ_Condition', y = 'SalePrice', data = House_price_train)
 #%%
@@ -83,8 +82,7 @@ train_data["mod_Neighborhood"] = House_price_train["Neighborhood"].replace('Mead
 .replace(['Veenker', 'Somerst', 'Timber'], 6)\
 .replace(['StoneBr'], 7)\
 .replace(['NoRidge'], 8)\
-.replace(['NridgHt'], 9)\
-.astype(str)
+.replace(['NridgHt'], 9)
 
 sns.boxplot(x = 'mod_Neighborhood', y = 'SalePrice', data = House_price_train, order = map(str, range(10)))
 #%%
@@ -94,8 +92,7 @@ a = House_price_train[['HouseStyle', 'SalePrice']].groupby(['HouseStyle']).media
 train_data["mod_HouseStyle"] = House_price_train["HouseStyle"].replace('1.5Unf', 0)\
 .replace(['1.5Fin', 'SFoyer', '2.5Unf'], 1)\
 .replace(['1Story', 'SLvl'], 2)\
-.replace(['2Story', '2.5Fin'], 3)\
-.astype(str)
+.replace(['2Story', '2.5Fin'], 3)
 
 sns.boxplot(x = 'mod_HouseStyle', y = 'SalePrice', data = House_price_train)
 #%%
@@ -105,8 +102,7 @@ a = House_price_train[['BsmtQual', 'SalePrice']].groupby(['BsmtQual']).median().
 train_data["mod_BsmtQual"] = House_price_train["BsmtQual"].replace(np.nan, 0)\
 .replace(['Fa', 'TA'], 1)\
 .replace('Gd', 2)\
-.replace('Ex', 3)\
-.astype(str)
+.replace('Ex', 3)
 
 sns.boxplot(x = 'mod_BsmtQual', y = 'SalePrice', data = House_price_train) #nan's in original data means no basement
 #%%
@@ -116,8 +112,7 @@ a = House_price_train[['BsmtCond', 'SalePrice']].groupby(['BsmtCond']).median().
 train_data["mod_BsmtCond"] = House_price_train["BsmtCond"].replace(np.nan, 0)\
 .replace(['Po'], 1)\
 .replace('Fa', 2)\
-.replace(['TA', 'Gd'], 3)\
-.astype(str)
+.replace(['TA', 'Gd'], 3)
 
 sns.boxplot(x = 'mod_BsmtCond', y = 'SalePrice', data = House_price_train) # 0 means no basement
 #%%
@@ -135,8 +130,7 @@ train_data["mod_GarageType"] = House_price_train["GarageType"].replace(np.nan, 0
 .replace('Detchd', 2)\
 .replace(['Basment', '2Types'], 3)\
 .replace(['Attchd'], 3)\
-.replace(['BuiltIn'], 4)\
-.astype(str)
+.replace(['BuiltIn'], 4)
 
 sns.boxplot(x = 'mod_GarageType', y = 'SalePrice', data = House_price_train)
 #%%
@@ -152,8 +146,7 @@ train_data["mod_SaleType"] = House_price_train["SaleType"].replace(['Oth', 'ConL
 .replace('WD', 2)\
 .replace(['CWD'], 3)\
 .replace(['New'], 3)\
-.replace(['Con'], 4)\
-.astype(str)
+.replace(['Con'], 4)
 
 sns.boxplot(x = 'mod_SaleType', y = 'SalePrice', data = House_price_train)
 #%%
@@ -165,16 +158,14 @@ a = House_price_train[[i, 'SalePrice']].groupby([i]).median().sort('SalePrice')
 train_data["mod_BldgType"] = House_price_train["BldgType"].replace(['2fmCon'] , 0)\
 .replace(['Duplex', 'Twnhs'], 1)\
 .replace('1Fam', 2)\
-.replace(['TwnhsE'], 3)\
-.astype(str)
+.replace(['TwnhsE'], 3)
 
 sns.boxplot(x = 'mod_BldgType', y = 'SalePrice', data = House_price_train)
 #%%
 sns.boxplot(x = 'Foundation', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_Foundation"] = House_price_train["Foundation"].replace(["BrkTil", "CBlock", "Slab", "Stone", "Wood"] , 0)\
-.replace(['PConc'], 1)\
-.astype(str)
+.replace(['PConc'], 1)
 
 sns.boxplot(x = 'mod_Foundation', y = 'SalePrice', data = House_price_train)
 #%%
@@ -200,13 +191,12 @@ House_price_train["mod_BsmtFinType2"] = House_price_train["BsmtFinType2"].replac
 .replace(['GLQ'], 6)
 
 train_data["summ_BsmtFinType"] = (House_price_train["mod_BsmtFinType1"] +\
- House_price_train["mod_BsmtFinType2"]).astype(int).astype(str)
+ House_price_train["mod_BsmtFinType2"]).astype(int)
  
 train_data["summ_BsmtFinType"] = train_data["summ_BsmtFinType"].replace(["1", "2", "3", "4", "5", "6", "7", "8", "9"] , 1)\
 .replace(['0'], 0)\
 .replace(['10'], 2)\
-.replace(['11'], 3)\
-.astype(str)
+.replace(['11'], 3)
  
 sns.boxplot(x = 'summ_BsmtFinType', y = 'SalePrice', data = House_price_train)
 #%%
@@ -215,10 +205,10 @@ sns.boxplot(x = 'Electrical', y = 'SalePrice', data = House_price_train)
 i = 'Electrical'
 a = House_price_train[[i, 'SalePrice']].groupby([i]).median().sort('SalePrice')
 
-train_data["summ_Electrical"] = House_price_train["Electrical"].replace(["Mix"] , '0')\
-.replace(['FuseP'], '1')\
-.replace(['FuseF', "FuseA"], '2')\
-.replace(['SBrkr'], '3')\
+train_data["summ_Electrical"] = House_price_train["Electrical"].replace(["Mix"] , 0)\
+.replace(['FuseP'], 1)\
+.replace(['FuseF', "FuseA"], 2)\
+.replace(['SBrkr'], 3)\
 
 sns.boxplot(x = 'summ_Electrical', y = 'SalePrice', data = House_price_train)
 #%%
@@ -256,34 +246,52 @@ sns.boxplot(x = 'mod_Alley', y = 'SalePrice', data = train_data)
 sns.boxplot(x = 'ExterQual', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_ExterQual"] = House_price_train["ExterQual"].fillna("None")\
-.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0}).astype(str)
+.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
 
 sns.boxplot(x = 'mod_ExterQual', y = 'SalePrice', data = train_data)
 #%%
 sns.boxplot(x = 'CentralAir', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_CentralAir"] = House_price_train["CentralAir"].fillna("None")\
-.map({"Y": 1, "N": 0}).astype(str)
+.map({"Y": 1, "N": 0})
 
 sns.boxplot(x = 'mod_CentralAir', y = 'SalePrice', data = train_data)
 #%%
 sns.boxplot(x = 'KitchenQual', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_KitchenQual"] = House_price_train["KitchenQual"].fillna("None")\
-.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0}).astype(str)
+.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
 
 sns.boxplot(x = 'mod_KitchenQual', y = 'SalePrice', data = train_data)
 #%%
 sns.boxplot(x = 'PavedDrive', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_PavedDrive"] = House_price_train["PavedDrive"].fillna("None")\
-.map({"Y": 2, "P": 1, "N": 0}).astype(str)
+.map({"Y": 2, "P": 1, "N": 0})
 
 sns.boxplot(x = 'mod_PavedDrive', y = 'SalePrice', data = train_data)
 #%%
 sns.boxplot(x = 'GarageFinish', y = 'SalePrice', data = House_price_train)
 
 train_data["mod_GarageFinish"] = House_price_train["GarageFinish"].fillna("None")\
-.map({"Fin": 3, "RFn":2, "Unf": 1, "None": 0}).astype(str)
+.map({"Fin": 3, "RFn":2, "Unf": 1, "None": 0})
 
 sns.boxplot(x = 'mod_GarageFinish', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'OverallQual', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_OverallQual"] = (House_price_train["OverallQual"]-1)
+#%%
+def check_null(Dataframe):
+    '''
+    Returns columns with number of nulls
+    '''
+    return Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
+    
+corrmat = train_data.corr().round(2)
+
+sns.heatmap(corrmat, annot=True)
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+            
