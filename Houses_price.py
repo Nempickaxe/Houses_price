@@ -60,7 +60,12 @@ def check_null(Dataframe):
     '''
     Returns columns with number of nulls
     '''
-    return Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
+    a = Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
+    if len(a) == 0:
+        return 'Null'
+    else:
+        return a
+        
 def barh_val(Data):
     '''
     horizontal bar graph with values at the end
@@ -91,3 +96,17 @@ barh_val(Data_catg)
 rem = check_null(Data_catg)[check_null(Data_catg)/1460>.5].index
 Data_catg_significant = Data_catg.drop(rem, axis = 1)
 ##convert_to_catg(col = 'LandContour')
+#%%
+#Creating Dummy Variables
+def dummy_var(train_data, exception):
+    '''
+    Creating Dummy Variables
+    '''
+    train_data_1 = pd.DataFrame()
+    for col in list(set(train_data.columns) - set(exception)):
+        n = train_data[col].max()
+        for i in range(n):
+            col_name = col + '_' + str(i)
+            train_data_1[col_name] = train_data[col].apply(lambda x: 1 if x == i else 0)
+    return train_data_1
+    

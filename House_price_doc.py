@@ -11,10 +11,20 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
 sns.set(style="whitegrid", color_codes=True)
-%matplotlib qt
+#%matplotlib qt
 #%%
 House_price_train = pd.read_csv('train.csv')
 del House_price_train['Id']
+#%%
+def no_null_objects(data, columns=None):
+    """
+    Returns rows with no NaNs
+    """
+    if columns is None:
+        columns = data.columns
+    return data[np.logical_not(np.any(data[columns].isnull().values, axis=1))]
+    
+House_price_train = no_null_objects(House_price_train, columns = ['Electrical', 'RoofMatl'])
 #%%
 numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 House_cat = House_price_train.select_dtypes(exclude=numerics)
@@ -110,7 +120,7 @@ train_data["summ_BsmtFinType"] = train_data["summ_BsmtFinType"].replace(["1", "2
 .replace(['10'], 2)\
 .replace(['11'], 3)
 
-train_data["summ_Electrical"] = House_price_train["Electrical"].replace(["Mix"] , 0)\
+train_data["mod_Electrical"] = House_price_train["Electrical"].replace(["Mix"] , 0)\
 .replace(['FuseP'], 1)\
 .replace(['FuseF', "FuseA"], 2)\
 .replace(['SBrkr'], 3)
@@ -143,4 +153,76 @@ train_data["mod_GarageFinish"] = House_price_train["GarageFinish"].fillna("None"
 .map({"Fin": 3, "RFn":2, "Unf": 1, "None": 0})
 
 train_data["mod_OverallQual"] = (House_price_train["OverallQual"]-1)
+
+train_data["mod_MSZoning"] = House_price_train["MSZoning"].fillna("None")\
+.map({"FV":3, "RL": 2, "RH":1, "RM": 1, "C (all)": 0})
+
+#train_data["mod_Exterior1st"] = House_price_train["Exterior1st"].fillna("None")\
+#.map({"ImStucc":7, "Stone":7, "CemntBd":6, "VinylSd":5, "Plywood":4,\
+#    "BrkFace":4, "HdBoard":3, "Stucco":3, "MetalSd":2, "Wd Sdng":2,\
+#    "WdShing":2, "AsbShng": 1, "CBlock":1, "AsphShn": 1, "BrkComm": 0})
+    
+train_data["mod_MasVnrType"] = House_price_train["MasVnrType"].fillna("None")\
+.map({"Stone": 2, "BrkFace":1, "BrkCmn": 0, "None": 0})
+
+train_data["mod_RoofMatl"] = House_price_train["RoofMatl"].fillna("None")\
+.map({"WdShngl": 1,"CompShg":0, "Metal":0, "WdShake":0, "Membran":0,\
+      "Tar&Grv":0, "Roll":0, "ClyTile":0})
+      
+train_data["mod_ExterCond"] = House_price_train["ExterCond"].fillna("None")\
+.map({"Ex":1, "Gd":1, "TA":1, "Fa":0,\
+      "Po":0})
+
+train_data["mod_BsmtExposure"] = House_price_train["BsmtExposure"].fillna("None")\
+.map({"Av":2, "Gd":2, "Mn":2, "No":1,\
+      "None":0})
+
+train_data["mod_HeatingQC"] = House_price_train["HeatingQC"].fillna("None")\
+.map({"Ex":1, "Gd":0, "TA":0, "Fa":0,\
+      "Po":0})
+
+#%%
+#for i in train_data.columns:
+#      if i !=  'SalePrice': 
+#        plt.figure()
+#        sns.boxplot(x = i, y = 'SalePrice', data = train_data)
+        
+#check na data
+def check_null(Dataframe):
+    '''
+    Returns columns with number of nulls
+    '''
+    a = Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
+    if len(a) == 0:
+        print 'Null'
+    else:
+        return a
+check_null(train_data) #expected Null
+#%%
+#corr Heatmap
+corrmat = train_data.corr().round(2)
+
+corrmat_1 = pd.DataFrame()
+for i in corrmat.columns:
+    corrmat_1[i] = corrmat[i].apply(lambda x: 0 if abs(x) <= 0.5 else x)
+
+sns.heatmap(corrmat_1, annot=True)
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
+plt.title('**Correlation Heatmap for features, 0 means corr less than 0.5**', weight = 'bold')
+#plt.tick_params(axis  = 'both', color = 'Black')
+#%%
+def dummy_var(train_data, exception):
+    '''
+    Creating Dummy Variables
+    '''
+    train_data_1 = pd.DataFrame()
+    for col in list(set(train_data.columns) - set(exception)):
+        n = train_data[col].max()
+        for i in range(n):
+            col_name = col + '_' + str(i)
+            train_data_1[col_name] = train_data[col].apply(lambda x: 1 if x == i else 0)
+    return train_data_1
+    
+train_data_1 = dummy_var(train_data, exception = ['SalePrice'])
 #%%

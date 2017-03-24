@@ -293,5 +293,80 @@ corrmat = train_data.corr().round(2)
 sns.heatmap(corrmat, annot=True)
 plt.xticks(rotation=90)
 plt.yticks(rotation=0)
+#%%
+col = [w.replace('mod_', '').replace('summ_', '') for w in train_data.columns]
+    
+a = [x for x in House_cat.columns if x not in col]
 
-            
+for i in a:
+      if i !=  'SalePrice': 
+        plt.figure()
+        sns.boxplot(x = i, y = 'SalePrice', data = House_price_train)
+#%%     
+b = ['MSZoning', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'RoofMatl', 'ExterCond',  'LotConfig',
+     'BsmtExposure', 'HeatingQC']
+     
+sns.boxplot(x = 'MSZoning', y = 'SalePrice', data = House_price_train)
+           
+train_data["mod_MSZoning"] = House_price_train["MSZoning"].fillna("None")\
+.map({"FV":3, "RL": 2, "RH":1, "RM": 1, "C (all)": 0})
+
+sns.boxplot(x = 'mod_MSZoning', y = 'SalePrice', data = train_data)
+#%%
+i = 'Exterior1st'
+a = House_price_train[[i, 'SalePrice']].groupby([i]).median().sort('SalePrice')
+
+House_price_train["mod_Exterior1st"] = House_price_train["Exterior1st"].fillna("None")\
+.map({"ImStucc":7, "Stone":7, "CemntBd":6, "VinylSd":5, "Plywood":4,\
+    "BrkFace":4, "HdBoard":3, "Stucco":3, "MetalSd":2, "Wd Sdng":2,\
+    "WdShing":2, "AsbShng": 1, "CBlock":1, "AsphShn": 1, "BrkComm": 0})
+
+House_price_train["mod_Exterior2nd"] = House_price_train["Exterior2nd"].fillna("None")\
+.map({"ImStucc":7, "Stone":7, "CemntBd":6, "VinylSd":5, "Plywood":4,\
+    "BrkFace":4, "HdBoard":3, "Stucco":3, "MetalSd":2, "Wd Sdng":2,\
+    "WdShing":2, "AsbShng": 1, "CBlock":1, "AsphShn": 1, "BrkComm": 0})
+
+#train_data['summ_Exterior'] = House_price_train["mod_Exterior1st"] + House_price_train["mod_Exterior2nd"]
+
+sns.boxplot(x = 'summ_Exterior', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'MasVnrType', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_MasVnrType"] = House_price_train["MasVnrType"].fillna("None")\
+.map({"Stone": 2, "BrkFace":1, "BrkCmn": 0, "None": 0})
+
+sns.boxplot(x = 'mod_MasVnrType', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'RoofMatl', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_RoofMatl"] = House_price_train["RoofMatl"].fillna("None")\
+.map({"WdShngl": 1,"CompShg":0, "Metal":0, "WdShake":0, "Membran":0,\
+      "Tar&Grv":0, "Roll":0, "ClyTile":0})
+      
+sns.boxplot(x = 'mod_RoofMatl', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'ExterCond', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_ExterCond"] = House_price_train["ExterCond"].fillna("None")\
+.map({"Ex":1, "Gd":1, "TA":1, "Fa":0,\
+      "Po":0})
+      
+sns.boxplot(x = 'mod_ExterCond', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'BsmtExposure', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_BsmtExposure"] = House_price_train["BsmtExposure"].fillna("None")\
+.map({"Av":2, "Gd":2, "Mn":2, "No":1,\
+      "None":0})
+
+sns.boxplot(x = 'mod_BsmtExposure', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'HeatingQC', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_HeatingQC"] = House_price_train["HeatingQC"].fillna("None")\
+.map({"Ex":1, "Gd":0, "TA":0, "Fa":0,\
+      "Po":0})
+
+sns.boxplot(x = 'mod_HeatingQC', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'mod_BsmtExposure', y = 'SalePrice', data = train_data)
