@@ -13,8 +13,30 @@ import seaborn as sns
 sns.set(style="whitegrid", color_codes=True)
 #%matplotlib qt
 #%%
-House_price_train = pd.read_csv('train.csv')
-del House_price_train['Id']
+iitial = 0
+if(iitial == 0):
+    House_price_train = pd.read_csv('train.csv')
+    #no_use
+    del House_price_train['Id']
+    #Multicollinearity_cat
+    del House_price_train['ExterQual']
+    del House_price_train['GarageType']
+    del House_price_train['KitchenQual']
+    #Multicollinearity_num
+    del House_price_train['GarageArea']
+    del House_price_train['TotalBsmtSF']
+    del House_price_train['TotRmsAbvGrd']
+    del House_price_train['GarageYrBlt']
+#    #No information gain
+#    del House_price_train['YrSold']
+#    del House_price_train['MoSold']
+#    del House_price_train['MiscVal']
+#    del House_price_train['PoolArea']
+#    del House_price_train['WoodDeckSF']
+#    del House_price_train['KitchenAbvGr']
+    
+    iitial+=1
+
 #%%
 def no_null_objects(data, columns=None):
     """
@@ -74,12 +96,12 @@ train_data["mod_BsmtCond"] = House_price_train["BsmtCond"].replace(np.nan, 0)\
 .replace('Fa', 2)\
 .replace(['TA', 'Gd'], 3)
 
-train_data["mod_GarageType"] = House_price_train["GarageType"].replace(np.nan, 0)\
-.replace(['CarPort'], 1)\
-.replace('Detchd', 2)\
-.replace(['Basment', '2Types'], 3)\
-.replace(['Attchd'], 3)\
-.replace(['BuiltIn'], 4)
+#train_data["mod_GarageType"] = House_price_train["GarageType"].replace(np.nan, 0)\
+#.replace(['CarPort'], 1)\
+#.replace('Detchd', 2)\
+#.replace(['Basment', '2Types'], 3)\
+#.replace(['Attchd'], 3)\
+#.replace(['BuiltIn'], 4)
 
 train_data["mod_SaleType"] = House_price_train["SaleType"].replace(['Oth', 'ConLI'] , 0)\
 .replace(['COD', 'ConLD', 'ConLw'], 1)\
@@ -137,14 +159,14 @@ train_data["mod_SaleCondition"] = House_price_train["SaleCondition"].fillna("Non
 train_data["mod_Alley"] = House_price_train["Alley"].fillna("None")\
 .map({"Pave": 2, "Grvl": 1, "None":0})
 
-train_data["mod_ExterQual"] = House_price_train["ExterQual"].fillna("None")\
-.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
+#train_data["mod_ExterQual"] = House_price_train["ExterQual"].fillna("None")\
+#.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
 
 train_data["mod_CentralAir"] = House_price_train["CentralAir"].fillna("None")\
 .map({"Y": 1, "N": 0})
 
-train_data["mod_KitchenQual"] = House_price_train["KitchenQual"].fillna("None")\
-.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
+#train_data["mod_KitchenQual"] = House_price_train["KitchenQual"].fillna("None")\
+#.map({"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0, "Po": 0})
 
 train_data["mod_PavedDrive"] = House_price_train["PavedDrive"].fillna("None")\
 .map({"Y":2, "P": 1, "N": 0})
@@ -181,6 +203,28 @@ train_data["mod_HeatingQC"] = House_price_train["HeatingQC"].fillna("None")\
 .map({"Ex":1, "Gd":0, "TA":0, "Fa":0,\
       "Po":0})
 
+train_data["mod_MSSubClass"] = House_price_train["MSSubClass"].replace([20,  70,  50, 190,  45,  90, 120,  85,  80, 160,  75,
+       180,  40] , 1)\
+.replace([30], 0)\
+.replace([60], 2)
+
+train_data['mod_OverallCond'] =House_price_train['OverallCond'].apply(lambda x: 1 if x >= 5 else 0)
+
+House_price_train['mod_OpenPorchSF'] =House_price_train['OpenPorchSF'].apply(lambda x: 0.2 if x != 0 else 0)
+House_price_train['mod_EnclosedPorch'] =House_price_train['EnclosedPorch'].apply(lambda x: 0.3 if x != 0 else 0)
+House_price_train['mod_3SsnPorch'] =House_price_train['3SsnPorch'].apply(lambda x: 0.7 if x != 0 else 0)
+House_price_train['mod_ScreenPorch'] =House_price_train['ScreenPorch'].apply(lambda x: 0.11 if x != 0 else 0)
+
+House_price_train['summ_porch_cond'] = House_price_train['mod_OpenPorchSF'] + \
+     House_price_train['mod_EnclosedPorch'] + \
+     House_price_train['mod_3SsnPorch'] + \
+     House_price_train['mod_ScreenPorch']
+
+train_data["mod_summ_porch_cond"] =House_price_train['summ_porch_cond'].apply(lambda x: 1 if x in (.2, .31) else 0)
+
+train_data['mod_Fireplaces'] =House_price_train['Fireplaces'].apply(lambda x: 1 if x > 0 else 0)
+
+train_data['mod_LowQualFinSF'] =House_price_train['LowQualFinSF'].apply(lambda x: 1 if x > 0 else 0)
 #%%
 #for i in train_data.columns:
 #      if i !=  'SalePrice': 
@@ -226,3 +270,23 @@ def dummy_var(train_data, exception):
     
 train_data_1 = dummy_var(train_data, exception = ['SalePrice'])
 #%%
+House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
+                                    House_price_train['BsmtFinSF2'] + \
+                                    House_price_train['BsmtFinSF1']
+                                    
+House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
+                                    House_price_train['BsmtFullBath']+\
+                                    House_price_train['FullBath']+\
+                                    House_price_train['HalfBath'] 
+                                    
+House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtFin']
+                                  
+num_var = ['LotFrontage', 'LotArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea',
+           'BedroomAbvGr', 'summ_Bathrooms', 'summ_livBsSF', 'GarageCars', 'SalePrice']
+           
+train_num = House_price_train[num_var]
+#%%
+corrmat = train_num.corr().round(2)
+sns.heatmap(corrmat, annot=True)
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)

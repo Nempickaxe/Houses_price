@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
 sns.set(style="whitegrid", color_codes=True)
-%matplotlib qt
+#%matplotlib qt
 #%%
 House_price_train = pd.read_csv('train.csv')
 del House_price_train['Id']
@@ -63,6 +63,7 @@ House_price_train["mod_Condition2"] = House_price_train["Condition2"].replace('A
 .replace(['RRNe', 'PosN'], 3)\
 .replace(['PosA', 'RRNn'], 4)
 
+train_data = pd.DataFrame()
 train_data['summ_Condition'] = (House_price_train["mod_Condition1"] + House_price_train["mod_Condition2"])
 
 sns.boxplot(x = 'summ_Condition', y = 'SalePrice', data = House_price_train)
@@ -370,3 +371,97 @@ train_data["mod_HeatingQC"] = House_price_train["HeatingQC"].fillna("None")\
 sns.boxplot(x = 'mod_HeatingQC', y = 'SalePrice', data = train_data)
 #%%
 sns.boxplot(x = 'mod_BsmtExposure', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'MSSubClass', y = 'SalePrice', data = House_price_train)
+
+train_data["mod_MSSubClass"] = House_price_train["MSSubClass"].replace([20,  70,  50, 190,  45,  90, 120,  85,  80, 160,  75,
+       180,  40] , 1)\
+.replace([30], 0)\
+.replace([60], 2)
+
+sns.boxplot(x = 'mod_MSSubClass', y = 'SalePrice', data = train_data)
+#%%
+House_price_train['mod_OpenPorchSF'] =House_price_train['OpenPorchSF'].apply(lambda x: 0.2 if x != 0 else 0)
+House_price_train['mod_EnclosedPorch'] =House_price_train['EnclosedPorch'].apply(lambda x: 0.3 if x != 0 else 0)
+House_price_train['mod_3SsnPorch'] =House_price_train['3SsnPorch'].apply(lambda x: 0.7 if x != 0 else 0)
+House_price_train['mod_ScreenPorch'] =House_price_train['ScreenPorch'].apply(lambda x: 0.11 if x != 0 else 0)
+
+House_price_train['summ_porch_cond'] = House_price_train['mod_OpenPorchSF'] + \
+     House_price_train['mod_EnclosedPorch'] + \
+     House_price_train['mod_3SsnPorch'] + \
+     House_price_train['mod_ScreenPorch']
+
+train_data["mod_summ_porch_cond"] =House_price_train['summ_porch_cond'].apply(lambda x: 1 if x in (.2, .31) else 0)
+
+#%%
+sns.boxplot(x = 'OverallCond', y = 'SalePrice', data = House_price_train)
+
+train_data['mod_OverallCond'] =House_price_train['OverallCond'].apply(lambda x: 1 if x >= 5 else 0)
+
+sns.boxplot(x = 'mod_OverallCond', y = 'SalePrice', data = train_data)
+#%%
+sns.boxplot(x = 'YrSold', y = 'SalePrice', data = House_price_train)
+sns.boxplot(x = 'MoSold', y = 'SalePrice', data = House_price_train)
+sns.boxplot(x = 'MiscVal', y = 'SalePrice', data = House_price_train)
+#%%
+#Numerical Variables
+sns.regplot(x = 'WoodDeckSF', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'GarageCars', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'Fireplaces', y = 'SalePrice', data = House_price_train)
+train_data['mod_Fireplaces'] =House_price_train['Fireplaces'].apply(lambda x: 1 if x > 0 else 0)
+#changing to cat as not much is seen in more than 0 fireplaces
+sns.regplot(x = 'BedroomAbvGr', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'BedroomAbvGr', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'LowQualFinSF', y = 'SalePrice', data = House_price_train)
+#changing to cat as not much is seen in more than 0 LowQualFinSF  
+sns.regplot(x = '2ndFlrSF', y = 'SalePrice', data = House_price_train)
+#Accomodating 2ndFlrSF
+sns.regplot(x = 'BsmtFinSF2', y = 'SalePrice', data = House_price_train)
+
+
+sns.regplot(x = 'summ_BsmtFin', y = 'SalePrice', data = House_price_train)
+
+sns.regplot(x = 'YearRemodAdd', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'YearBuilt', y = 'SalePrice', data = House_price_train)
+sns.regplot(x = 'LotArea', y = 'SalePrice', data = House_price_train)
+#Outliers
+sns.regplot(x = 'LotFrontage', y = 'SalePrice', data = House_price_train)
+
+sns.regplot(x = 'summ_bathrooms', y = 'SalePrice', data = House_price_train)
+
+House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
+                                    House_price_train['BsmtFinSF2'] + \
+                                    House_price_train['BsmtFinSF1']
+                                    
+House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
+                                    House_price_train['BsmtFullBath']+\
+                                    House_price_train['FullBath']+\
+                                    House_price_train['HalfBath']
+
+House_price_train['summ_livSF'] = House_price_train['1stFlrSF'] + \
+                                    House_price_train['2ndFlrSF'] + \
+                                    House_price_train['LowQualFinSF']
+sns.regplot(x = 'summ_livSF', y = 'SalePrice', data = House_price_train)
+House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtFin']
+sns.regplot(x = 'summ_livBsSF', y = 'SalePrice', data = House_price_train)
+corrmat = House_price_train[['SalePrice', 'summ_livBsSF', 'summ_livSF', 'summ_BsmtFin', 'GrLivArea']].corr().round(2)
+sns.heatmap(corrmat, annot=True)
+sns.regplot(x = 'summ_livSF', y = 'GrLivArea', data = House_price_train)
+
+sns.regplot(x = 'GarageCars', y = 'SalePrice', data = House_price_train)
+#%%
+House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
+                                    House_price_train['BsmtFinSF2'] + \
+                                    House_price_train['BsmtFinSF1']
+                                    
+House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
+                                    House_price_train['BsmtFullBath']+\
+                                    House_price_train['FullBath']+\
+                                    House_price_train['HalfBath'] 
+                                    
+House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtFin']
+                                  
+num_var = ['LotFrontage', 'LotArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea', 'summ_BsmtSF',
+           'summ_Bathrooms', 'BedroomAbvGr', 'summ_livBsSF', 'GarageCars']
+           
+train_num = House_price_train[num_var]
