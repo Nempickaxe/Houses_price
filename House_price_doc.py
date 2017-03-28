@@ -16,6 +16,7 @@ sns.set(style="whitegrid", color_codes=True)
 iitial = 0
 if(iitial == 0):
     House_price_train = pd.read_csv('train.csv')
+    House_price_train.index = House_price_train['Id']
     #no_use
     del House_price_train['Id']
     #Multicollinearity_cat
@@ -268,7 +269,7 @@ def dummy_var(train_data, exception):
             train_data_1[col_name] = train_data[col].apply(lambda x: 1 if x == i else 0)
     return train_data_1
     
-train_data_1 = dummy_var(train_data, exception = ['SalePrice'])
+train_cat = dummy_var(train_data, exception = ['SalePrice'])
 #%%
 House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
                                     House_price_train['BsmtFinSF2'] + \
@@ -279,14 +280,67 @@ House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
                                     House_price_train['FullBath']+\
                                     House_price_train['HalfBath'] 
                                     
-House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtFin']
+House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtSF']
                                   
 num_var = ['LotFrontage', 'LotArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea',
            'BedroomAbvGr', 'summ_Bathrooms', 'summ_livBsSF', 'GarageCars', 'SalePrice']
            
 train_num = House_price_train[num_var]
+check_null(train_num)
+#filling na with mean 
+train_num = train_num.fillna(train_num.mean())
 #%%
 corrmat = train_num.corr().round(2)
 sns.heatmap(corrmat, annot=True)
 plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
+#%%
+#Linearity
+#scatterplot
+sns.set()
+sns.pairplot(train_num, vars = list(train_num.columns[0:5]) +['SalePrice'])
+plt.figure()
+sns.pairplot(train_num, vars = list(train_num.columns[5: train_num.shape[1] + 1]))
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
+#%%
+#histogram and normal probability plot
+from scipy.stats import norm
+from scipy import stats
+
+i = 0
+logcurve = True
+def prob_plt(i, logcurve):
+    if(logcurve):
+        sns.distplot(np.log(train_num[train_num.columns[i]] + 1), fit=norm);
+        plt.figure()
+        stats.probplot(np.log(train_num[train_num.columns[i]] + 1), plot=plt)
+    else:
+        sns.distplot(train_num[train_num.columns[i]], fit=norm);
+        plt.figure()
+        stats.probplot(train_num[train_num.columns[i]], plot=plt)
+i = 4
+logcurve = True
+prob_plt(i, logcurve)
+
+sns.distplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]]), fit=norm);
+plt.figure()
+stats.probplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]]), plot=plt)
+#%%
+#corr = np.corrcoef(train_num, rowvar=0)
+#w, v = np.linalg.eig(corr)  # eigen values & eigen vectors
+#Variance Inflation Factor (VIF)
+corrmat = train_num.corr()
+def vif_func(x):
+    try:
+        return 1.0/(1-x**2)
+    except ZeroDivisionError:
+        return -1
+Vif = corrmat.applymap(vif_func)
+sns.heatmap(Vif, annot=True)
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
+#Check if VIF>10, for multi-collinearity
+from sklearn.preprocessing import StandardScaler
+saleprice_scaled = pd.DataFrame(data = StandardScaler().fit_transform(train_num), columns = train_num.columns).sort_values(by = 'SalePrice')
+a = saleprice_scaled.sum(axis = 1)

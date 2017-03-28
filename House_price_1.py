@@ -462,6 +462,14 @@ House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
 House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtFin']
                                   
 num_var = ['LotFrontage', 'LotArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea', 'summ_BsmtSF',
-           'summ_Bathrooms', 'BedroomAbvGr', 'summ_livBsSF', 'GarageCars']
+           'summ_Bathrooms', 'BedroomAbvGr', 'summ_livBsSF', 'GarageCars', 'SalePrice']
            
 train_num = House_price_train[num_var]
+#%%
+#scatterplot
+sns.set()
+sns.pairplot(train_num, vars = list(train_num.columns[0:5]) +['SalePrice'])
+plt.figure()
+sns.pairplot(train_num, vars = list(train_num.columns[5: train_num.shape[1] + 1]))
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
