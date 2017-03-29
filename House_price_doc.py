@@ -39,6 +39,24 @@ if(iitial == 0):
     iitial+=1
 
 #%%
+#Outliers
+Outliers_index = []
+Outliers_index += list(House_price_train.sort_values(by = 'LotFrontage', ascending = False)[:2].index)
+Outliers_index += list(House_price_train.sort_values(by = 'LotArea', ascending = False)[:4].index)
+Outliers_index += list(House_price_train.sort_values(by = 'SalePrice', ascending = False)[:2].index)
+House_price_train.drop([1299, 935, 314, 336, 250, 707, 692, 1183], inplace = True) # to ensure consistency
+# derived variable = summ_livBsSF done later
+#%%
+def check_null(Dataframe):
+    '''
+    Returns columns with number of nulls
+    '''
+    a = Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
+    if len(a) == 0:
+        print 'Null'
+    else:
+        return a
+
 def no_null_objects(data, columns=None):
     """
     Returns rows with no NaNs
@@ -49,9 +67,32 @@ def no_null_objects(data, columns=None):
     
 House_price_train = no_null_objects(House_price_train, columns = ['Electrical', 'RoofMatl'])
 #%%
-numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-House_cat = House_price_train.select_dtypes(exclude=numerics)
-House_num = House_price_train.select_dtypes(include=numerics)
+#Numerical Variables
+House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
+                                    House_price_train['BsmtFinSF2'] + \
+                                    House_price_train['BsmtFinSF1']
+                                    
+House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
+                                    House_price_train['BsmtFullBath']+\
+                                    House_price_train['FullBath']+\
+                                    House_price_train['HalfBath'] 
+                                    
+House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtSF']
+                                  
+num_var = ['LotFrontage', 'LotArea', 'MasVnrArea',
+           'BedroomAbvGr', 'summ_Bathrooms', 'summ_livBsSF',
+           'GarageCars', 'SalePrice']
+           
+train_num = House_price_train[num_var]
+check_null(train_num)
+#filling na with mean 
+train_num = train_num.fillna(train_num.mean())
+#%%
+#Outlier Removal contd..
+Outliers_index = list(House_price_train.sort_values(by = 'summ_livBsSF', ascending = False)[:2].index)
+House_price_train.drop([524, 497], inplace = True) # to ensure consistency
+train_num.drop([524, 497], inplace = True) # to ensure consistency
+
 #%%
 train_data = pd.DataFrame()
 
@@ -226,22 +267,21 @@ train_data["mod_summ_porch_cond"] =House_price_train['summ_porch_cond'].apply(la
 train_data['mod_Fireplaces'] =House_price_train['Fireplaces'].apply(lambda x: 1 if x > 0 else 0)
 
 train_data['mod_LowQualFinSF'] =House_price_train['LowQualFinSF'].apply(lambda x: 1 if x > 0 else 0)
-#%%
-#for i in train_data.columns:
-#      if i !=  'SalePrice': 
-#        plt.figure()
-#        sns.boxplot(x = i, y = 'SalePrice', data = train_data)
-        
-#check na data
-def check_null(Dataframe):
-    '''
-    Returns columns with number of nulls
-    '''
-    a = Dataframe.isnull().sum()[Dataframe.isnull().sum()>0]
-    if len(a) == 0:
-        print 'Null'
+
+def year_era(x):
+    if x < 1950:
+        return 0
+    elif x < 2000:
+        return 1
     else:
-        return a
+        return 2
+House_price_train['era_YearBuilt'] = House_price_train['YearBuilt'].apply(year_era)
+House_price_train['era_YearRemodAdd'] = House_price_train['YearRemodAdd'].apply(year_era)
+House_price_train['mod_remod'] = np.where(House_price_train['era_YearBuilt'] == House_price_train['era_YearRemodAdd'], 0, 1)
+
+train_data["mod_remod"] = House_price_train['mod_remod']
+train_data['era_YearBuilt'] = House_price_train['era_YearBuilt']
+
 check_null(train_data) #expected Null
 #%%
 #corr Heatmap
@@ -270,25 +310,7 @@ def dummy_var(train_data, exception):
     return train_data_1
     
 train_cat = dummy_var(train_data, exception = ['SalePrice'])
-#%%
-House_price_train['summ_BsmtSF'] = House_price_train['BsmtUnfSF'] +\
-                                    House_price_train['BsmtFinSF2'] + \
-                                    House_price_train['BsmtFinSF1']
-                                    
-House_price_train['summ_Bathrooms'] = House_price_train['BsmtHalfBath'] +\
-                                    House_price_train['BsmtFullBath']+\
-                                    House_price_train['FullBath']+\
-                                    House_price_train['HalfBath'] 
-                                    
-House_price_train['summ_livBsSF'] = House_price_train['GrLivArea'] + House_price_train['summ_BsmtSF']
-                                  
-num_var = ['LotFrontage', 'LotArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea',
-           'BedroomAbvGr', 'summ_Bathrooms', 'summ_livBsSF', 'GarageCars', 'SalePrice']
-           
-train_num = House_price_train[num_var]
-check_null(train_num)
-#filling na with mean 
-train_num = train_num.fillna(train_num.mean())
+
 #%%
 corrmat = train_num.corr().round(2)
 sns.heatmap(corrmat, annot=True)
@@ -304,12 +326,8 @@ sns.pairplot(train_num, vars = list(train_num.columns[5: train_num.shape[1] + 1]
 plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
 #%%
-#histogram and normal probability plot
 from scipy.stats import norm
 from scipy import stats
-
-i = 0
-logcurve = True
 def prob_plt(i, logcurve):
     if(logcurve):
         sns.distplot(np.log(train_num[train_num.columns[i]] + 1), fit=norm);
@@ -319,28 +337,8 @@ def prob_plt(i, logcurve):
         sns.distplot(train_num[train_num.columns[i]], fit=norm);
         plt.figure()
         stats.probplot(train_num[train_num.columns[i]], plot=plt)
-i = 4
-logcurve = True
+        
+i = 7
+logcurve = False
 prob_plt(i, logcurve)
-
-sns.distplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]]), fit=norm);
-plt.figure()
-stats.probplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]]), plot=plt)
 #%%
-#corr = np.corrcoef(train_num, rowvar=0)
-#w, v = np.linalg.eig(corr)  # eigen values & eigen vectors
-#Variance Inflation Factor (VIF)
-corrmat = train_num.corr()
-def vif_func(x):
-    try:
-        return 1.0/(1-x**2)
-    except ZeroDivisionError:
-        return -1
-Vif = corrmat.applymap(vif_func)
-sns.heatmap(Vif, annot=True)
-plt.xticks(rotation=30, ha = 'right')
-plt.yticks(rotation=0)
-#Check if VIF>10, for multi-collinearity
-from sklearn.preprocessing import StandardScaler
-saleprice_scaled = pd.DataFrame(data = StandardScaler().fit_transform(train_num), columns = train_num.columns).sort_values(by = 'SalePrice')
-a = saleprice_scaled.sum(axis = 1)

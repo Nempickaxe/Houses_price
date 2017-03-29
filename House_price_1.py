@@ -473,3 +473,75 @@ plt.figure()
 sns.pairplot(train_num, vars = list(train_num.columns[5: train_num.shape[1] + 1]))
 plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
+#%%
+#histogram and normal probability plot
+from scipy.stats import norm
+from scipy import stats
+
+i = 0
+logcurve = True
+def prob_plt(i, logcurve):
+    if(logcurve):
+        sns.distplot(np.log(train_num[train_num.columns[i]] + 1), fit=norm);
+        plt.figure()
+        stats.probplot(np.log(train_num[train_num.columns[i]] + 1), plot=plt)
+    else:
+        sns.distplot(train_num[train_num.columns[i]], fit=norm);
+        plt.figure()
+        stats.probplot(train_num[train_num.columns[i]], plot=plt)
+#%%
+i = 0
+logcurve = False
+prob_plt(i, logcurve)
+#%%
+sns.distplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]] + 1), fit=norm);
+plt.figure()
+stats.probplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]] + 1), plot=plt)
+#%%
+#corr = np.corrcoef(train_num, rowvar=0)
+#w, v = np.linalg.eig(corr)  # eigen values & eigen vectors
+#Variance Inflation Factor (VIF)
+corrmat = train_num.corr()
+def vif_func(x):
+    try:
+        return 1.0/(1-x**2)
+    except ZeroDivisionError:
+        return -1
+Vif = corrmat.applymap(vif_func)
+sns.heatmap(Vif, annot=True)
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
+#Check if VIF>10, for multi-collinearity
+from sklearn.preprocessing import StandardScaler
+saleprice_scaled = pd.DataFrame(data = StandardScaler().fit_transform(train_num), columns = train_num.columns).sort_values(by = 'SalePrice')
+a = saleprice_scaled.sum(axis = 1)
+#%%
+sns.boxplot(x = 'YearBuilt', y = 'SalePrice', data = House_price_train)
+plt.xticks(rotation=30, ha = 'right')
+sns.distplot(House_price_train['YearBuilt'])
+#%%
+def year_era(x):
+    if x < 1950:
+        return 1900
+    elif x < 2000:
+        return 1975
+    else:
+        return (2017+2000)/2
+House_price_train['mod_YearBuilt'] = House_price_train['YearBuilt'].apply(year_era)
+sns.boxplot(x = 'mod_YearBuilt', y = 'SalePrice', data = House_price_train)
+House_price_train['mod_YearRemodAdd'] = House_price_train['YearRemodAdd'].apply(year_era)
+sns.boxplot(x = 'mod_YearRemodAdd', y = 'SalePrice', data = House_price_train)
+
+#%%
+#renovated
+House_price_train['mod_remod'] = np.where(House_price_train['mod_YearBuilt'] == House_price_train['mod_YearRemodAdd'], 0, 1)
+sns.boxplot(x = 'mod_remod', y = 'SalePrice', data = House_price_train)
+#%%
+plt.figure()
+sns.swarmplot(x = 'mod_YearRemodAdd', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', palette = "BrBG", alpha = 0.9)
+sns.swarmplot(x = 'mod_YearBuilt', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', palette = "coolwarm", alpha = 0.9)
+sns.lmplot(x = 'YearBuilt', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', fit_reg=False, palette = "husl")
+plt.figure()
+sns.lmplot(x = 'mod_YearBuilt', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', fit_reg=False, palette = "husl")
+plt.figure()
+sns.swarmplot(x = 'mod_YearRemodAdd', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', palette = "BrBG", alpha = 0.9)
