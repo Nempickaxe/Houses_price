@@ -320,9 +320,9 @@ plt.yticks(rotation=0)
 #Linearity
 #scatterplot
 sns.set()
-sns.pairplot(train_num, vars = list(train_num.columns[0:5]) +['SalePrice'])
+sns.pairplot(train_num, vars = list(train_num.columns[0:3]) +['SalePrice'])
 plt.figure()
-sns.pairplot(train_num, vars = list(train_num.columns[5: train_num.shape[1] + 1]))
+sns.pairplot(train_num, vars = list(train_num.columns[3: train_num.shape[1] + 1]))
 plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
 #%%
@@ -330,15 +330,54 @@ from scipy.stats import norm
 from scipy import stats
 def prob_plt(i, logcurve):
     if(logcurve):
+        plt.figure()
         sns.distplot(np.log(train_num[train_num.columns[i]] + 1), fit=norm);
         plt.figure()
         stats.probplot(np.log(train_num[train_num.columns[i]] + 1), plot=plt)
     else:
+        plt.figure()
         sns.distplot(train_num[train_num.columns[i]], fit=norm);
         plt.figure()
         stats.probplot(train_num[train_num.columns[i]], plot=plt)
         
-i = 7
-logcurve = False
+i = 4
+logcurve = 1
 prob_plt(i, logcurve)
 #%%
+#Normal distribution
+'''
+log -> LotArea, MasVnrArea (n+1), summ_livBsSF, SalePrice
+nolog -> LotFrontage, BedroomAbvGr, summ_Bathrooms, GarageCars
+'''
+train_num_1 = train_num[['LotFrontage', 'BedroomAbvGr', 'summ_Bathrooms', 'GarageCars']]
+train_num_1['LotArea'] = train_num['LotArea'].apply(lambda x: np.log(x))
+train_num_1['MasVnrArea'] = train_num['MasVnrArea'].apply(lambda x: np.log(x+1))
+train_num_1['summ_livBsSF'] = train_num['summ_livBsSF'].apply(lambda x: np.log(x))
+train_num_1['SalePrice'] = train_num['SalePrice'].apply(lambda x: np.log(x))
+#%%
+#Multicollinearity check with VIF
+corrmat = train_num_1.corr()
+def vif_func(x):
+    try:
+        return 1.0/(1-x**2)
+    except ZeroDivisionError:
+        return -1
+Vif = corrmat.applymap(vif_func)
+sns.heatmap(Vif, annot=True)
+plt.xticks(rotation=30, ha = 'right')
+plt.yticks(rotation=0)
+#Check if VIF>10, for multi-collinearity
+#%%
+#Auto-Correlation  1.5 < d < 2.5
+from statsmodels.stats.stattools import durbin_watson
+import statsmodels.api as sm
+dw = {}
+for i in train_num_1:
+    y = train_num_1[['SalePrice']]
+    X = train_num_1[i]
+    model = sm.OLS(y, X)
+    results = model.fit()
+    dw[i] = durbin_watson(results.resid)
+    dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
+    #Ignore SalePrice
+    #MasVnrArea Again!! question, these variables are indeendent from previous values, autocorrelation doesn't make sense

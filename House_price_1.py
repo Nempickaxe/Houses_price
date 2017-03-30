@@ -490,13 +490,14 @@ def prob_plt(i, logcurve):
         plt.figure()
         stats.probplot(train_num[train_num.columns[i]], plot=plt)
 #%%
-i = 0
-logcurve = False
+i = 2
+logcurve = True
 prob_plt(i, logcurve)
 #%%
-sns.distplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]] + 1), fit=norm);
 plt.figure()
-stats.probplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]] + 1), plot=plt)
+sns.distplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]] ), fit=norm);
+plt.figure()
+stats.probplot(np.log(train_num[train_num[train_num.columns[i]] > 0][train_num.columns[i]]), plot=plt)
 #%%
 #corr = np.corrcoef(train_num, rowvar=0)
 #w, v = np.linalg.eig(corr)  # eigen values & eigen vectors
@@ -513,7 +514,7 @@ plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
 #Check if VIF>10, for multi-collinearity
 from sklearn.preprocessing import StandardScaler
-saleprice_scaled = pd.DataFrame(data = StandardScaler().fit_transform(train_num), columns = train_num.columns).sort_values(by = 'SalePrice')
+saleprice_scaled = pd.DataFrame(data = StandardScaler().fit_transform(train_num), columns = train_num.columns, index = train_num.index).sort_values(by = 'SalePrice')
 a = saleprice_scaled.sum(axis = 1)
 #%%
 sns.boxplot(x = 'YearBuilt', y = 'SalePrice', data = House_price_train)
