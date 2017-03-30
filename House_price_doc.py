@@ -380,4 +380,4 @@ for i in train_num_1:
     dw[i] = durbin_watson(results.resid)
     dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
     #Ignore SalePrice
-    #MasVnrArea Again!! question, these variables are indeendent from previous values, autocorrelation doesn't make sense
+    #MasVnrArea Again!! question, these variables are independent from previous values, autocorrelation doesn't make sense
