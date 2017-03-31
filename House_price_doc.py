@@ -372,12 +372,26 @@ plt.yticks(rotation=0)
 from statsmodels.stats.stattools import durbin_watson
 import statsmodels.api as sm
 dw = {}
+F = {}
 for i in train_num_1:
     y = train_num_1[['SalePrice']]
     X = train_num_1[i]
     model = sm.OLS(y, X)
     results = model.fit()
-    dw[i] = durbin_watson(results.resid)
+    resd = pd.DataFrame(results.resid, columns = ['residual'])
+    resd[i] = train_num_1[i]
+    resd = resd.sort_values(by = i, ascending = True)
+    
+    dw[i] = durbin_watson(resd[i])
     dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
+    
+    N1 = resd.residual[0:len(resd)/2]**2
+    N2 = resd.residual[len(resd)/2 : len(resd)]**2
+    #Heteroscedascity: Golfeld-Quant test
+    F[i] = (sum(N2)/len(N2)) / (sum(N1)/len(N1))
+    plt.figure()
+    sns.regplot(x = i, y = 'SalePrice', data = train_num_1)
     #Ignore SalePrice
     #MasVnrArea Again!! question, these variables are independent from previous values, autocorrelation doesn't make sense
+    #sns.residplot(x = i, y = 'SalePrice', data = train_num_1)
+    
