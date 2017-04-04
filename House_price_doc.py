@@ -435,10 +435,18 @@ y_matrix = target.as_matrix()
 
 regr.fit(x_matrix, y_matrix)
 #mean squared error
-SSE = sum((regr.predict(x_matrix) - y_matrix)**2)
-SST = sum((y_matrix - np.mean(y_matrix))**2)
-R2 = 1-SSE/SST
+SSE = sum((np.exp(regr.predict(x_matrix)) - np.exp(y_matrix))**2)
+SST = sum((np.exp(y_matrix) - np.exp(np.mean(y_matrix)))**2)
+R2 = 1-SSE/SST 
 n = len(x_matrix)
 m = x_matrix.shape[1]
 R2adj = 1 - (1- R2)*(n-1)/(n-m)
 #http://stats.stackexchange.com/questions/32596/what-is-the-difference-between-coefficient-of-determination-and-mean-squared
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets)**2).mean())
+rmse(regr.predict(x_matrix), y_matrix)
+
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+
+rms = sqrt(mean_squared_error(np.exp(y_matrix), regr.predict(x_matrix)))
