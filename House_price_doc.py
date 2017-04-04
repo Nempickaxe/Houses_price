@@ -367,31 +367,54 @@ sns.heatmap(Vif, annot=True)
 plt.xticks(rotation=30, ha = 'right')
 plt.yticks(rotation=0)
 #Check if VIF>10, for multi-collinearity
+
 #%%
-#Auto-Correlation  1.5 < d < 2.5
-from statsmodels.stats.stattools import durbin_watson
-import statsmodels.api as sm
-dw = {}
-F = {}
-for i in train_num_1:
-    y = train_num_1[['SalePrice']]
-    X = train_num_1[i]
-    model = sm.OLS(y, X)
-    results = model.fit()
-    resd = pd.DataFrame(results.resid, columns = ['residual'])
-    resd[i] = train_num_1[i]
-    resd = resd.sort_values(by = i, ascending = True)
-    
-    dw[i] = durbin_watson(resd[i])
-    dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
-    
-    N1 = resd.residual[0:len(resd)/2]**2
-    N2 = resd.residual[len(resd)/2 : len(resd)]**2
-    #Heteroscedascity: Golfeld-Quant test
-    F[i] = (sum(N2)/len(N2)) / (sum(N1)/len(N1))
-    plt.figure()
-    sns.regplot(x = i, y = 'SalePrice', data = train_num_1)
-    #Ignore SalePrice
-    #MasVnrArea Again!! question, these variables are independent from previous values, autocorrelation doesn't make sense
-    #sns.residplot(x = i, y = 'SalePrice', data = train_num_1)
-    
+
+def Autocorr_heteroSked(train_num_1):
+    '''
+    Auto-Correlation  1.5 < d < 2.5 and Heterosedascity: Goldfeld-Quandt test as near to 1
+    NOTE: y variable is set to SalePrice
+    '''
+    #Auto-Correlation  1.5 < d < 2.5 and Heterosedascity: Goldfeld-Quandt test
+    from statsmodels.stats.stattools import durbin_watson
+    #from statsmodels.stats.stattools import het_goldfeldquandt
+    from sklearn.linear_model import LinearRegression
+    dw = {}
+    F = {}
+    for i in train_num_1:
+        y = train_num_1[['SalePrice']]
+        X = train_num_1[[i]]
+        #mod = ols(y = train_num_1[['SalePrice']].as_matrix(), x = train_num_1[i].as_matrix())
+        lr = LinearRegression()
+        lr.fit(X, y)
+        resid = y - lr.predict(X)
+        resd = pd.DataFrame(resid.values, columns = ['residual'])
+        resd['X'] = X.values
+        resd['y'] = y.values
+        reshd = resd.sort_values(by = 'X', ascending = True)
+        
+        #Autocorrelation: durbin watson
+        dw[i] = durbin_watson(reshd['residual'])
+        dw_res = dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
+        
+        #Heteroscedascity: Golfeld-Quant test
+        from math import ceil
+        N1 = reshd.residual[0:(len(reshd)/2 - int(ceil(len(reshd)/100)))]**2
+        N2 = reshd.residual[(len(reshd)/2 + int(ceil(len(reshd)/100))) : len(reshd)]**2
+        F[i] = (sum(N2)/len(N2)) / (sum(N1)/len(N1))
+        
+        plt.figure()
+        ax = sns.regplot(x = X, y = 'residual', data = reshd, label = i)
+        ax.legend(loc="best")
+    tup = (('durbin_watson', dw), ('dw_res', dw_res), ('Golfeld_Quant', F))
+    return tup
+
+a = Autocorr_heteroSked(train_num_1)    
+'''
+# The slope of residual regression line is 0 and F value is also close to 1, so homoskedascity
+# if F value is less than 1 means, initial values have more variance and viceversa
+# dw also checks out as dw_res is null (except SalePrice which is OK)
+'''
+#%%
+#join data
+train_join = train_cat.join(train_num)

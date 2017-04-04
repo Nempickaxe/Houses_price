@@ -546,3 +546,44 @@ plt.figure()
 sns.lmplot(x = 'mod_YearBuilt', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', fit_reg=False, palette = "husl")
 plt.figure()
 sns.swarmplot(x = 'mod_YearRemodAdd', y = 'SalePrice', data = House_price_train, hue = 'mod_remod', palette = "BrBG", alpha = 0.9)
+#%%
+##Auto-Correlation  1.5 < d < 2.5 and Heterosedascity: Goldfeld-Quandt test
+#from statsmodels.stats.stattools import durbin_watson
+##from statsmodels.stats.stattools import het_goldfeldquandt
+#import statsmodels.api as sm
+#dw = {}
+#F = {}
+#for i in train_num_1:
+#    y = train_num_1[['SalePrice']]
+#    X = train_num_1[[i]]
+#    #mod = ols(y = train_num_1[['SalePrice']].as_matrix(), x = train_num_1[i].as_matrix())
+#    model = sm.OLS(train_num_1['SalePrice'], train_num_1[i] )
+#    results = model.fit()
+#    resd = pd.DataFrame(results.resid, columns = ['residual'])
+#    resd[i] = train_num_1[i]
+#    resd[['SalePrice']] = train_num_1[['SalePrice']]
+#    resd = resd.sort_values(by = i, ascending = True)
+#    
+#    dw[i] = durbin_watson(resd[i])
+#    dict((k,v) for k, v in dw.items() if v > 2.5 or v < 1.5)
+#    from math import ceil
+#    
+#    N1 = resd.residual[0:(len(resd)/2 - int(ceil(len(resd)/100)))]**2
+#    N2 = resd.residual[(len(resd)/2 + int(ceil(len(resd)/100))) : len(resd)]**2
+#    #Heteroscedascity: Golfeld-Quant test
+#    F[i] = (sum(N2)/len(N2)) / (sum(N1)/len(N1))
+#    plt.figure()
+#    ax = sns.regplot(x = i, y = 'residual', data = resd, label = i)
+#    ax.legend(loc="best")
+#    
+#for i in train_num_1:
+#    plt.figure()
+#    fig = sns.regplot(x = i, y = 'SalePrice', data = train_num_1, label = i)
+#    #fig.legend(loc="best")
+#    #Ignore SalePrice
+#    #MasVnrArea Again!! question, these variables are independent from previous values, autocorrelation doesn't make sense
+#    #sns.residplot(x = i, y = 'SalePrice', data = train_num_1)
+#plt.plot(train_num_1[i], train_num_1['SalePrice'], 'ro')   
+#plt.plot(train_num_1[i], results.fittedvalues, 'b') 
+#plt.xlabel(i)
+#plt.ylabel('SalePrice')
