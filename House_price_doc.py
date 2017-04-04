@@ -416,5 +416,29 @@ a = Autocorr_heteroSked(train_num_1)
 # dw also checks out as dw_res is null (except SalePrice which is OK)
 '''
 #%%
+#Scaling numerical data
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaler.fit(train_num_1.iloc[:,:-1])
+train_num_2 = pd.DataFrame(scaler.transform(train_num_1.iloc[:,:-1]), columns = train_num_1.iloc[:,:-1].columns, index = train_num_1.index)
+
+target = train_num_1.SalePrice
 #join data
-train_join = train_cat.join(train_num)
+train_join = train_cat.join(train_num_2)
+#%%
+#Linear Regression
+from sklearn.linear_model import LinearRegression
+regr = LinearRegression()
+
+x_matrix = train_join.as_matrix()
+y_matrix = target.as_matrix()
+
+regr.fit(x_matrix, y_matrix)
+#mean squared error
+SSE = sum((regr.predict(x_matrix) - y_matrix)**2)
+SST = sum((y_matrix - np.mean(y_matrix))**2)
+R2 = 1-SSE/SST
+n = len(x_matrix)
+m = x_matrix.shape[1]
+R2adj = 1 - (1- R2)*(n-1)/(n-m)
+#http://stats.stackexchange.com/questions/32596/what-is-the-difference-between-coefficient-of-determination-and-mean-squared
