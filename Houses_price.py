@@ -109,4 +109,11 @@ def dummy_var(train_data, exception):
             col_name = col + '_' + str(i)
             train_data_1[col_name] = train_data[col].apply(lambda x: 1 if x == i else 0)
     return train_data_1
-    
+#%%
+def multi_del(list1, texts):
+    '''
+    delete texts(list) from list1
+    '''
+    for i in texts:
+        list1 = [ s.replace(i, '') for s in list1]
+    return list1

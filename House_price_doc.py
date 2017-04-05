@@ -450,3 +450,11 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 rms = sqrt(mean_squared_error(np.exp(y_matrix), regr.predict(x_matrix)))
+#%%
+Residual_y = (regr.predict(x_matrix) - y_matrix)
+plt.hist(Residual_y, bins = np.arange(min(Residual_y), max(Residual_y) + .01, .01))
+
+plt.stem(y_matrix, Residual_y, markerfmt = 'ro', linefmt = 'g--', basefmt = 'm:')
+plt.title('Residual v/s SalePrice')
+plt.ylabel('Residual')
+plt.xlabel('SalePrice')
