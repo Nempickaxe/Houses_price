@@ -110,7 +110,12 @@ House_price_train["mod_Condition2"] = House_price_train["Condition2"].replace('A
 .replace(['RRNe', 'PosN'], 3)\
 .replace(['PosA', 'RRNn'], 4)
 
-train_data['summ_Condition'] = (House_price_train["mod_Condition1"] + House_price_train["mod_Condition2"])
+House_price_train['summ_Condition'] = (House_price_train["mod_Condition1"] + House_price_train["mod_Condition2"])
+
+train_data['summ_Condition'] = House_price_train['summ_Condition'].replace([0,1], 0)\
+.replace([2,3], 1)\
+.replace([4,5], 2)\
+.replace([5,6,7,8,9], 3)
 
 train_data["mod_Neighborhood"] = House_price_train["Neighborhood"].replace('MeadowV', 0)\
 .replace(['IDOTRR', 'BrDale'], 1)\
@@ -245,7 +250,7 @@ train_data["mod_HeatingQC"] = House_price_train["HeatingQC"].fillna("None")\
 .map({"Ex":1, "Gd":0, "TA":0, "Fa":0,\
       "Po":0})
 
-train_data["mod_MSSubClass"] = House_price_train["MSSubClass"].replace([20,  70,  50, 190,  45,  90, 120,  85,  80, 160,  75,
+train_data["mod_MSSubClass"] = House_price_train["MSSubClass"].replace([20,  70,  50, 190, 150,  45,  90, 120,  85,  80, 160,  75,
        180,  40] , 1)\
 .replace([30], 0)\
 .replace([60], 2)
@@ -297,7 +302,7 @@ plt.yticks(rotation=0)
 plt.title('**Correlation Heatmap for features, 0 means corr less than 0.5**', weight = 'bold')
 #plt.tick_params(axis  = 'both', color = 'Black')
 #%%
-def dummy_var(train_data, exception):
+def dummy_var(train_data, exception = []):
     '''
     Creating Dummy Variables
     '''
@@ -419,8 +424,9 @@ a = Autocorr_heteroSked(train_num_1)
 #Scaling numerical data
 from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
+
 scaler.fit(train_num_1.iloc[:,:-1])
-train_num_2 = pd.DataFrame(scaler.transform(train_num_1.iloc[:,:-1]), columns = train_num_1.iloc[:,:-1].columns, index = train_num_1.index)
+train_num_2 = pd.DataFrame(scaler.transform(train_num_1.iloc[:,:-1]), columns = train_num_1.iloc[:,:-1].columns, index = train_num_1.iloc[:,:-1].index)
 
 target = train_num_1.SalePrice
 #join data

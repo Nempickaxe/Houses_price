@@ -62,7 +62,12 @@ House_price_test["mod_Condition2"] = House_price_test["Condition2"].replace('Art
 .replace(['RRNe', 'PosN'], 3)\
 .replace(['PosA', 'RRNn'], 4)
 
-test_data['summ_Condition'] = (House_price_test["mod_Condition1"] + House_price_test["mod_Condition2"])
+House_price_test['summ_Condition'] = (House_price_test["mod_Condition1"] + House_price_test["mod_Condition2"])
+
+test_data['summ_Condition'] = House_price_test['summ_Condition'].replace([0,1], 0)\
+.replace([2,3], 1)\
+.replace([4,5], 2)\
+.replace([5,6,7,8,9], 3)
 
 test_data["mod_Neighborhood"] = House_price_test["Neighborhood"].replace('MeadowV', 0)\
 .replace(['IDOTRR', 'BrDale'], 1)\
@@ -197,7 +202,7 @@ test_data["mod_HeatingQC"] = House_price_test["HeatingQC"].fillna("None")\
 .map({"Ex":1, "Gd":0, "TA":0, "Fa":0,\
       "Po":0})
 
-test_data["mod_MSSubClass"] = House_price_test["MSSubClass"].replace([20,  70,  50, 190,  45,  90, 120,  85,  80, 160,  75,
+test_data["mod_MSSubClass"] = House_price_test["MSSubClass"].replace([20,  70,  50, 190, 150,  45,  90, 120,  85,  80, 160,  75,
        180,  40] , 1)\
 .replace([30], 0)\
 .replace([60], 2)
@@ -237,6 +242,11 @@ test_data['era_YearBuilt'] = House_price_test['era_YearBuilt']
 #fillna with 0
 test_data = test_data.fillna(0)
 check_null(test_data) #expected Null
+#Assigning float values, so bulk change to int
+test_data = test_data.astype(int)
+#%%
+#Dummy
+test_cat = dummy_var(test_data)
 #%%
 #Numerical Variables
 House_price_test['summ_BsmtSF'] = House_price_test['BsmtUnfSF'] +\
@@ -258,3 +268,24 @@ test_num = House_price_test[num_var]
 check_null(test_num)
 #filling na with mean 
 test_num = test_num.fillna(test_num.mean())
+#%%
+#Normal distribution
+'''
+log -> LotArea, MasVnrArea (n+1), summ_livBsSF
+nolog -> LotFrontage, BedroomAbvGr, summ_Bathrooms, GarageCars
+'''
+test_num_1 = test_num[['LotFrontage', 'BedroomAbvGr', 'summ_Bathrooms', 'GarageCars']]
+test_num_1['LotArea'] = test_num['LotArea'].apply(lambda x: np.log(x))
+test_num_1['MasVnrArea'] = test_num['MasVnrArea'].apply(lambda x: np.log(x+1))
+test_num_1['summ_livBsSF'] = test_num['summ_livBsSF'].apply(lambda x: np.log(x))
+
+#%%
+#Scale
+test_num_2 = pd.DataFrame(scaler.transform(test_num_1), columns = test_num_1.columns, index = test_num_1.index)
+#Join
+test_join = test_cat.join(test_num_2)
+#%%
+#ML Part
+test_y = regr.predict(test_join.as_matrix()) #log values
+final_result = pd.DataFrame(np.exp(test_y), index = test_join.index, columns = ['SalePrice'])
+final_result.to_csv('final_result.csv')
