@@ -117,3 +117,21 @@ def multi_del(list1, texts):
     for i in texts:
         list1 = [ s.replace(i, '') for s in list1]
     return list1
+#%%
+# copied function: https://www.kaggle.com/neviadomski/house-prices-advanced-regression-techniques/how-to-get-to-top-25-with-simple-model-sklearn
+# Prints R2 and RMSE scores
+def get_score(prediction, lables):    
+    print('R2: {}'.format(r2_score(prediction, lables)))
+    print('RMSE: {}'.format(np.sqrt(mean_squared_error(prediction, lables))))
+
+# Shows scores for train and validation sets    
+def train_test(estimator, x_trn, x_tst, y_trn, y_tst):
+    prediction_train = estimator.predict(x_trn)
+    # Printing estimator
+    print(estimator)
+    # Printing train scores
+    get_score(prediction_train, y_trn)
+    prediction_test = estimator.predict(x_tst)
+    # Printing test scores
+    print("Test")
+    get_score(prediction_test, y_tst)
