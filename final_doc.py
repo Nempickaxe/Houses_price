@@ -288,4 +288,16 @@ test_join = test_cat.join(test_num_2)
 #ML Part
 test_y = regr.predict(test_join.as_matrix()) #log values
 final_result = pd.DataFrame(np.exp(test_y), index = test_join.index, columns = ['SalePrice'])
-final_result.to_csv('final_result.csv')
+#final_result.to_csv('final_result.csv')
+#%%
+#adding error terms with help of gb regr
+test_error = gbm_fit.predict(test_join.as_matrix())
+
+new_result = test_y + test_error
+final_result = pd.DataFrame(np.exp(new_result), index = test_join.index, columns = ['SalePrice'])
+final_result.to_csv('final_result1.csv')
+
+#%%
+gbm_test = gbm_fit.predict(test_join.as_matrix())
+final_result = pd.DataFrame(np.exp(gbm_test), index = test_join.index, columns = ['SalePrice'])
+final_result.to_csv('final_result2.csv')

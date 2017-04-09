@@ -464,3 +464,97 @@ plt.stem(y_matrix, Residual_y, markerfmt = 'ro', linefmt = 'g--', basefmt = 'm:'
 plt.title('Residual v/s SalePrice')
 plt.ylabel('Residual')
 plt.xlabel('SalePrice')
+#%%
+from sklearn.ensemble import GradientBoostingRegressor  #GBM algorithm
+from sklearn import cross_validation, metrics   #Additional scklearn functions
+from sklearn.grid_search import GridSearchCV   #Perforing grid search
+
+gbm_y = y_matrix - regr.predict(x_matrix)
+gbm_x = x_matrix
+param_test1 = {'n_estimators':range(20,81,10)}
+#min_sample_split = 0.5-1% of 1459
+gsearch1 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, max_depth=3, max_features='sqrt',
+                                               min_samples_leaf=15, min_samples_split=7, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test1,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch1.fit(x_matrix, y_matrix)
+gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_
+#%%
+param_test2 = {'n_estimators':range(150,500,10)}
+gsearch1 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, max_depth=3, max_features='sqrt',
+                                               min_samples_leaf=15, min_samples_split=7, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test2,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch1.fit(x_matrix, y_matrix)
+gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_
+#%%
+param_test2 = {'max_depth':range(5,16,2), 'min_samples_split':range(1,9,1)}
+
+gsearch2 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=430, max_features='sqrt', subsample=0.8, random_state=10), 
+param_grid = param_test2, scoring= None,n_jobs=4,iid=False, cv=5)
+
+gsearch2.fit(x_matrix, y_matrix)
+gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_
+#%%
+param_test3 = {'min_samples_leaf':range(1,9,1), 'min_samples_split':range(9,15,1)}
+
+gsearch3 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=430,
+                                                              max_depth = 9,
+                                                              max_features='sqrt', subsample=0.8,
+                                                              random_state=10), 
+param_grid = param_test3, scoring= None,n_jobs=4,iid=False, cv=5)
+
+gsearch3.fit(x_matrix, y_matrix)
+gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_
+#%%
+param_test4 = {'max_features':range(5,14,2)}
+
+gsearch4 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=430, min_samples_leaf =3,
+                                                              min_samples_split = 9, max_depth = 9,
+                                                              subsample=0.8,
+                                                              random_state=10, loss='huber'), 
+param_grid = param_test4, scoring= None,n_jobs=4,iid=False, cv=5)
+
+gsearch4.fit(x_matrix, y_matrix)
+gsearch4.grid_scores_, gsearch4.best_params_, gsearch4.best_score_
+#%%
+param_test5 = {'subsample':[0.6,0.7,0.75,0.8,0.85,0.9]}
+
+gsearch5 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, n_estimators=430, min_samples_leaf =4,
+                                                              min_samples_split = 3, max_depth = 9,
+                                                              max_features = 11,
+                                                              random_state=10, loss='huber'), 
+param_grid = param_test5, scoring= None,n_jobs=4,iid=False, cv=5)
+
+gsearch5.fit(x_matrix, y_matrix)
+gsearch5.grid_scores_, gsearch5.best_params_, gsearch5.best_score_
+#%%
+
+gbm_fit = GradientBoostingRegressor(learning_rate=0.1, n_estimators=430, min_samples_leaf =4,
+                                                              min_samples_split = 3, max_depth = 9,
+                                                              max_features = 9, subsample =0.85,
+                                                              random_state=10, loss='huber')
+gbm_fit.fit(x_matrix, y_matrix)
+gbm_ans = gbm_fit.predict(x_matrix)
+
+Residual_y = (gbm_ans - y_matrix)       
+plt.hist(Residual_y, bins = np.arange(min(Residual_y), max(Residual_y) + .01, .01))    
+
+plt.stem(y_matrix, Residual_y, markerfmt = 'ro', linefmt = 'g--', basefmt = 'm:')
+plt.title('Residual v/s SalePrice')
+plt.ylabel('Residual')
+plt.xlabel('SalePrice')    
+
+SSE = sum((np.exp(gbm_ans) - np.exp(y_matrix))**2)
+SST = sum((np.exp(y_matrix) - np.exp(np.mean(y_matrix)))**2)
+R2 = 1-SSE/SST 
+n = len(x_matrix)
+m = x_matrix.shape[1]
+R2adj = 1 - (1- R2)*(n-1)/(n-m)
+#http://stats.stackexchange.com/questions/32596/what-is-the-difference-between-coefficient-of-determination-and-mean-squared                                         
+
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets)**2).mean())
+rmse(gbm_ans, y_matrix)
