@@ -347,4 +347,169 @@ train_x = train_df_munged.as_matrix()
 train_y = label_df.as_matrix()
 test_x = test_df_munged.as_matrix()
 
+# The error metric: RMSE on the log of the sale prices.
+from sklearn.metrics import mean_squared_error
+def rmse(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))
 
+#%%
+#Baseline Model
+gbm0 = GradientBoostingRegressor(random_state=10)
+gbm0.fit(train_x, train_y)
+
+print 'R2:', gbm0.score(train_x, train_y), 'rmse:', rmse(train_y, gbm0.predict(train_x))
+#%%
+'''
+https://www.analyticsvidhya.com/blog/2016/02/complete-guide-parameter-tuning-gradient-boosting-gbm-python/
+min_sample_split(~0.5-1% of total values): 8
+max_depth = 7 (5-8)
+subsample = 0.8
+learning_rate = 0.1
+max_features = 'sqrt'
+loss = going with 'huber'
+min_samples_leaf: 50 Defines the minimum samples (or observations) required in a terminal node or leaf.
+'''
+param_test1 = {'n_estimators':range(20,500,10)}
+gsearch1 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, max_depth=7, max_features='sqrt',
+                                               min_samples_leaf=15, min_samples_split=8, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test1,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch1.fit(train_x, train_y)
+gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_
+'''
+selected n_estimator = 200
+'''
+#%%
+param_test2 = {'max_depth':range(5,16,2), 'min_samples_split':range(5,16,2)}
+gsearch2 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_features='sqrt',
+                                               min_samples_leaf=15, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test2,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch2.fit(train_x, train_y)
+gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_
+'''
+both max_depth and min_samples_split converged at 5 an extremities
+'''
+#%%
+param_test3 = {'max_depth':range(2,6,1), 'min_samples_split':range(2,6,1)}
+gsearch3 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_features='sqrt',
+                                               min_samples_leaf=15, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test3,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch3.fit(train_x, train_y)
+gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_
+'''
+selected max_depth: 4, min_samples_split: 2
+'''
+#%%
+param_test4 = {'min_samples_leaf':range(30,71,10)}
+gsearch4 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4, max_features='sqrt',
+                                               min_samples_split=2, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test4,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch4.fit(train_x, train_y)
+gsearch4.grid_scores_, gsearch4.best_params_, gsearch4.best_score_
+'''
+converged at extremity, min_samples_leaf: 30
+'''
+#%%
+param_test5 = {'min_samples_leaf':range(10,31,10)}
+gsearch5 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4, max_features='sqrt',
+                                               min_samples_split=2, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test5,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch5.fit(train_x, train_y)
+gsearch5.grid_scores_, gsearch5.best_params_, gsearch5.best_score_
+'''
+converged at extremity, min_samples_leaf: 10
+'''
+#%%
+param_test6 = {'min_samples_leaf':range(1,11,2)}
+gsearch6 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4, max_features='sqrt',
+                                               min_samples_split=2, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test6,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch6.fit(train_x, train_y)
+gsearch6.grid_scores_, gsearch6.best_params_, gsearch6.best_score_
+'''
+selected min_samples_leaf: 1
+'''
+#%%
+param_test7 = {'max_features':range(7,12,1)}
+gsearch7 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4,
+                                               min_samples_leaf= 1, min_samples_split=2, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test7,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch7.fit(train_x, train_y)
+gsearch7.grid_scores_, gsearch7.best_params_, gsearch7.best_score_
+'''
+selected max_features: 9
+'''
+#%%
+param_test8 = {'subsample':[0.6,0.7,0.75,0.8,0.85,0.9]}
+gsearch8 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4, max_features= 9,
+                                               min_samples_leaf= 1, min_samples_split=2, loss='huber', random_state = 10),
+                                                               param_grid = param_test8,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch8.fit(train_x, train_y)
+gsearch8.grid_scores_, gsearch8.best_params_, gsearch8.best_score_
+'''
+selected subsample: 0.8
+'''
+#%%
+'''
+n_estimator = 200
+max_depth: 4
+min_samples_split: 2
+min_samples_leaf: 1
+max_features: 9
+subsample: 0.8
+'''
+gbm_fit = GradientBoostingRegressor(n_estimators = 200, learning_rate=0.1, max_depth=4,
+                          max_features=9, min_samples_leaf= 1, min_samples_split=2,
+                          loss='huber', subsample = 0.8, random_state = 10)
+
+gbm_fit.fit(train_x, train_y)
+
+print 'R2:', gbm_fit.score(train_x, train_y), 'rmse:', rmse(train_y, gbm_fit.predict(train_x))
+#%%
+'''
+halving learning rate and doubling number of trees
+'''
+gbm_fit_1 = GradientBoostingRegressor(n_estimators = 400, learning_rate=0.05, max_depth=4,
+                          max_features=9, min_samples_leaf= 1, min_samples_split=2,
+                          loss='huber', subsample = 0.8, random_state = 10)
+
+gbm_fit_1.fit(train_x, train_y)
+
+print 'R2:', gbm_fit_1.score(train_x, train_y), 'rmse:', rmse(train_y, gbm_fit_1.predict(train_x))
+'''
+It got better
+'''
+#%%
+'''
+1/10th learning rate and 10 number of trees
+'''
+gbm_fit_2 = GradientBoostingRegressor(n_estimators = 2000, learning_rate=0.01, max_depth=4,
+                          max_features=9, min_samples_leaf= 1, min_samples_split=2,
+                          loss='huber', subsample = 0.8, random_state = 10)
+
+gbm_fit_2.fit(train_x, train_y)
+
+print 'R2:', gbm_fit_2.score(train_x, train_y), 'rmse:', rmse(train_y, gbm_fit_2.predict(train_x))
+'''
+It got better again!! but not that much
+'''
+#%%
+#Predicting test data
+gbm_submission = np.exp(gbm_fit_2.predict(test_x))
+final_result = pd.DataFrame(gbm_submission, index = test_df_munged.index, columns = ['SalePrice'])
+final_result.to_csv('final_result3.csv')
