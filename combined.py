@@ -61,6 +61,8 @@ def munge(df):
     all_df["GarageCars"] = df["GarageCars"]
     all_df["GarageCars"].fillna(0, inplace=True)
     
+    
+    #################################################################################
     #Categorical variables
     #Conditions
     all_df["mod_Condition1"] = df["Condition1"].replace('Artery', 0)\
@@ -82,7 +84,6 @@ def munge(df):
     .replace([5,6,7,8,9], 3)
     all_df.drop(['mod_Condition1', 'mod_Condition2'], axis=1, inplace=True)                            
 
-    
     #Neighbourhood
     all_df["mod_Neighborhood"] = df["Neighborhood"].replace('MeadowV', 0)\
     .replace(['IDOTRR', 'BrDale'], 1)\
@@ -250,7 +251,7 @@ munge_test = munge(House_price_test)
 from scipy.stats import skew
 
 numeric_features = ['LotFrontage', 'BedroomAbvGr', 'summ_Bathrooms', 'GarageCars',
-                    'BedroomAbvGr', 'GarageCars', 'summ_livBsSF', 'LotArea', 'MasVnrArea']
+                    'summ_livBsSF', 'LotArea', 'MasVnrArea']
 skewed = munge_train[numeric_features].apply(lambda x: skew(x.dropna().astype(float)))
 skewed = skewed[skewed > 0.75]
 skewed = skewed.index
@@ -286,7 +287,7 @@ def onehot(onehot_df, df, column_name, fill_na):
     if fill_na is not None:
         onehot_df[column_name].fillna(fill_na, inplace=True)
 
-    dummies = pd.get_dummies(onehot_df[column_name], prefix="_" + column_name)
+    dummies = pd.get_dummies(onehot_df[column_name], prefix="_" + column_name, drop_first = False)
     
     # Dropping one of the columns actually made the results slightly worse.
     # if drop_name is not None:
@@ -514,5 +515,145 @@ It got better again!! but not that much
 #%%
 #Predicting test data
 gbm_submission = np.exp(gbm_fit_2.predict(test_x))
+final_result = pd.DataFrame(gbm_submission, index = test_df_munged.index, columns = ['SalePrice'])
+final_result.to_csv('final_result3.csv')
+#%%
+from matplotlib import pyplot
+#%matplotlib qt
+pyplot.bar(range(len(gbm_fit_2.feature_importances_)), gbm_fit_2.feature_importances_)
+pyplot.show()
+imp = pd.DataFrame()
+imp['var'] = train_df_munged.columns
+imp['imp'] = gbm_fit_2.feature_importances_
+###############################################################################################
+#%%
+train_x = munge_train.as_matrix()
+train_y = label_df.as_matrix()
+test_x = munge_test.as_matrix()
+#Baseline Model
+gbm0 = GradientBoostingRegressor(random_state=10)
+gbm0.fit(train_x, train_y)
+
+print 'R2:', gbm0.score(train_x, train_y), 'rmse:', rmse(train_y, gbm0.predict(train_x))
+pyplot.bar(range(len(gbm0.feature_importances_)), gbm0.feature_importances_)
+#%%
+'''
+https://www.analyticsvidhya.com/blog/2016/02/complete-guide-parameter-tuning-gradient-boosting-gbm-python/
+min_sample_split(~0.5-1% of total values): 8
+max_depth = 7 (5-8)
+subsample = 0.8
+learning_rate = 0.1
+max_features = 'sqrt'
+loss = going with 'huber'
+min_samples_leaf: 50 Defines the minimum samples (or observations) required in a terminal node or leaf.
+'''
+param_test1 = {'n_estimators':range(20,500,10)}
+gsearch1 = GridSearchCV(estimator = GradientBoostingRegressor(learning_rate=0.1, max_depth=7, max_features='sqrt',
+                                               min_samples_leaf=15, min_samples_split=8, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test1,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch1.fit(train_x, train_y)
+gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_
+#{'n_estimators': 110}
+#%%
+param_test2 = {'max_depth':range(5,16,2), 'min_samples_split':range(5,16,2)}
+gsearch2 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_features='sqrt',
+                                               min_samples_leaf=15, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test2,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch2.fit(train_x, train_y)
+gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_
+#{'max_depth': 15, 'min_samples_split': 5**}
+#%%
+param_test3 = {'min_samples_split':range(1,6,1)}
+gsearch3 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1,max_depth = 15, max_features='sqrt',
+                                               min_samples_leaf=15, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test3,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch3.fit(train_x, train_y)
+gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_
+#{'min_samples_split': 1}
+#%%
+param_test4 = {'min_samples_leaf':range(30,71,10)}
+gsearch4 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_depth= 15, max_features='sqrt',
+                                               min_samples_split=1, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test4,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch4.fit(train_x, train_y)
+gsearch4.grid_scores_, gsearch4.best_params_, gsearch4.best_score_
+#%%
+param_test5 = {'min_samples_leaf':range(5,31,5)}
+gsearch5 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_depth= 15, max_features='sqrt',
+                                               min_samples_split=1, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test5,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch5.fit(train_x, train_y)
+gsearch5.grid_scores_, gsearch5.best_params_, gsearch5.best_score_
+#{'min_samples_leaf': 20}
+#%%
+param_test6 = {'max_features':range(4,8,1)}
+gsearch6 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_depth= 15,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber', subsample = 0.8, random_state = 10),
+                                                               param_grid = param_test6,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch6.fit(train_x, train_y)
+gsearch6.grid_scores_, gsearch6.best_params_, gsearch6.best_score_
+#{'max_features': 6}
+#%%
+param_test7 = {'subsample':[0.6,0.7,0.75,0.8,0.85,0.9]}
+gsearch7 = GridSearchCV(estimator = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_depth= 15, max_features=6,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber', random_state = 10),
+                                                               param_grid = param_test7,
+                                                               scoring= None ,
+                                                               n_jobs=4,iid=False, cv=5)
+gsearch7.fit(train_x, train_y)
+gsearch7.grid_scores_, gsearch7.best_params_, gsearch7.best_score_
+#{'subsample': 0.8}
+#%%
+grad_boost = GradientBoostingRegressor(n_estimators = 110, learning_rate=0.1, max_depth= 15, max_features=6,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber',
+                                               random_state = 10, subsample = 0.8)
+grad_boost.fit(train_x, train_y)
+
+print 'R2:', grad_boost.score(train_x, train_y), 'rmse:', rmse(train_y, grad_boost.predict(train_x))
+#%%
+'''
+halving learning rate and doubling number of trees
+'''
+grad_boost_1 = GradientBoostingRegressor(n_estimators = 220, learning_rate=0.05, max_depth= 15, max_features=6,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber',
+                                               random_state = 10, subsample = 0.8)
+grad_boost_1.fit(train_x, train_y)
+
+print 'R2:', grad_boost_1.score(train_x, train_y), 'rmse:', rmse(train_y, grad_boost_1.predict(train_x))
+#%%
+'''
+1/10th learning rate and 10 number of trees
+'''
+grad_boost_2 = GradientBoostingRegressor(n_estimators = 1100, learning_rate=0.01, max_depth= 15, max_features=6,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber',
+                                               random_state = 10, subsample = 0.8)
+grad_boost_2.fit(train_x, train_y)
+
+print 'R2:', grad_boost_2.score(train_x, train_y), 'rmse:', rmse(train_y, grad_boost_2.predict(train_x))
+#%%
+'''
+1/20th learning rate and 20 number of trees
+'''
+grad_boost_3 = GradientBoostingRegressor(n_estimators = 2200, learning_rate=0.005, max_depth= 15, max_features=6,
+                                               min_samples_leaf = 20, min_samples_split=1, loss='huber',
+                                               random_state = 10, subsample = 0.8)
+grad_boost_3.fit(train_x, train_y)
+
+print 'R2:', grad_boost_3.score(train_x, train_y), 'rmse:', rmse(train_y, grad_boost_3.predict(train_x))
+#%%
+#Predicting test data
+gbm_submission = np.exp(grad_boost_3.predict(test_x))
 final_result = pd.DataFrame(gbm_submission, index = test_df_munged.index, columns = ['SalePrice'])
 final_result.to_csv('final_result3.csv')
