@@ -1,0 +1,64 @@
+---
+title: "H1"
+author: "Nemish"
+date: "April 12, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ggplot2)
+library(stringr)
+library(dplyr)
+```
+
+```{r}
+train = read.csv('train.csv', stringsAsFactors = FALSE)
+test = read.csv('test.csv', stringsAsFactors = FALSE)
+```
+
+```{r}
+df.combined = rbind(within(train, rm('SalePrice')), test)
+rownames(df.combined) <- df.combined$Id
+df.combined$Id <- NULL
+```
+count of null values present in the columns of `df.combined`
+```{r}
+na.cols = which(colSums(is.na(df.combined)) > 0)
+sort(colSums(sapply(df.combined[na.cols], is.na)), decreasing = TRUE)
+paste('No. of columns with missing values:', length(na.cols) )
+```
+
+helper function for plotting categoric data for easier data visualization
+```{r}
+
+plot.categoric = function(cols, df){
+  for (col in cols) {
+    order.cols = names(sort(table(df[,col]), decreasing = TRUE))
+  
+    num.plot = qplot(df[,col]) +
+      geom_bar(fill = '#00A4CC') +
+      geom_text(aes(label = ..count..), stat='count', vjust=-0.5) +
+      theme_minimal() +
+      scale_y_continuous(limits = c(0,max(table(df[,col]))*1.1)) +
+      scale_x_discrete(limits = order.cols) +
+      xlab(col) +
+      theme(axis.text.x = element_text(angle = 30, size=12))
+  
+    print(num.plot)
+  }
+}
+```
+#Pool chunk
+```{r}
+pool.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Pool'))]
+df.combined[is.na(df.combined$PoolQC) & (df.combined$PoolArea > 0), c('PoolQC','PoolArea')]
+
+df.combined[,c(pool.cols)] %>%
+  group_by(PoolQC) %>%
+    summarise(mean = mean(PoolArea))
+```
+
+

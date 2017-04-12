@@ -656,4 +656,4 @@ print 'R2:', grad_boost_3.score(train_x, train_y), 'rmse:', rmse(train_y, grad_b
 #Predicting test data
 gbm_submission = np.exp(grad_boost_3.predict(test_x))
 final_result = pd.DataFrame(gbm_submission, index = test_df_munged.index, columns = ['SalePrice'])
-final_result.to_csv('final_result3.csv')
+final_result.to_csv('final_result4.csv')
