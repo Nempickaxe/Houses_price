@@ -31,9 +31,8 @@ sort(colSums(sapply(df.combined[na.cols], is.na)), decreasing = TRUE)
 paste('No. of columns with missing values:', length(na.cols) )
 ```
 
-helper function for plotting categoric data for easier data visualization
+#helper function for plotting categoric data for easier data visualization
 ```{r}
-
 plot.categoric = function(cols, df){
   for (col in cols) {
     order.cols = names(sort(table(df[,col]), decreasing = TRUE))
@@ -51,6 +50,7 @@ plot.categoric = function(cols, df){
   }
 }
 ```
+
 #Pool chunk
 ```{r}
 pool.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Pool'))]
@@ -58,7 +58,96 @@ df.combined[is.na(df.combined$PoolQC) & (df.combined$PoolArea > 0), c('PoolQC','
 
 df.combined[,c(pool.cols)] %>%
   group_by(PoolQC) %>%
-    summarise(mean = mean(PoolArea))
+    summarise(mean = mean(PoolArea), counts = n())
+
+df.combined[2421,'PoolQC'] = 'Ex'
+df.combined[2504,'PoolQC'] = 'Ex'
+df.combined[2600,'PoolQC'] = 'Fa'
+df.combined$PoolQC[is.na(df.combined$PoolQC)] = 'None'
+
 ```
 
+#Garage Chunk
+```{r}
+length(which(df.combined$GarageYrBlt == df.combined$YearBuilt))
 
+idx = which(is.na(df.combined$GarageYrBlt))
+df.combined[idx, 'GarageYrBlt'] <- df.combined[idx, 'YearBuilt']
+
+garage.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Garage'))]
+sort(colSums(sapply(df.combined[garage.cols], is.na)), decreasing = TRUE)
+
+df.combined[is.na(df.combined$GarageCond),garage.cols]
+
+df.combined[,c(garage.cols)] %>%
+  group_by(GarageType) %>%
+    summarise(median0 = median(GarageCars, na.rm=TRUE), median1 = median(GarageArea, na.rm=TRUE), counts = n())
+
+#Treating NA's in Cars and Area field
+# for Detchd
+df.combined[is.na(df.combined$GarageArea),garage.cols]
+df.combined[2577, 'GarageArea'] <- 399.5
+df.combined[2577, 'GarageCars'] <- 2
+
+idx = which(((df.combined$GarageArea < 370) & (df.combined$GarageArea > 350)) & (df.combined$GarageCars == 1))
+names(sapply(df.combined[idx, garage.cols], function(x) sort(table(x), decreasing=TRUE)[1]))
+
+df.combined[2127,'GarageQual'] = 'TA'
+df.combined[2127, 'GarageFinish'] = 'Unf'
+df.combined[2127, 'GarageCond'] = 'TA'
+
+idx = which(((df.combined$GarageArea < 410) & (df.combined$GarageArea > 380)) & (df.combined$GarageCars == 2))
+names(sapply(df.combined[idx, garage.cols], function(x) sort(table(x), decreasing=TRUE)[1]))
+df.combined[2577,'GarageQual'] = 'TA'
+df.combined[2577, 'GarageFinish'] = 'Fin'
+df.combined[2577, 'GarageCond'] = 'TA'
+
+for (col in garage.cols){
+  if (sapply(df.combined[col], is.numeric) == TRUE){
+    df.combined[is.na(df.combined[col]), col] = 0
+  }
+  else{
+    df.combined[is.na(df.combined[col]), col] = 'None'
+  }
+}
+```
+
+#Kitchen and Electrical Chunk
+```{r}
+plot.categoric('KitchenQual', df.combined)
+df.combined$KitchenQual[is.na(df.combined$KitchenQual)] = 'TA'
+plot.categoric('Electrical', df.combined)
+df.combined$Electrical[is.na(df.combined$Electrical)] = 'SBrkr'
+```
+
+#Basement Chunk
+```{r}
+bsmt.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Bsmt'))]
+
+sort(colSums(sapply(df.combined[bsmt.cols], is.na)), decreasing = TRUE)
+df.combined[is.na(df.combined$BsmtExposure),bsmt.cols]
+df.combined[c(949, 1488, 2349), 'BsmtExposure'] = 'No'
+
+for (col in bsmt.cols){
+  if (sapply(df.combined[col], is.numeric) == TRUE){
+    df.combined[sapply(df.combined[col], is.na),col] = 0
+  }
+  else{
+    df.combined[sapply(df.combined[col],is.na),col] = 'None'
+  }
+}
+```
+
+#Exterior Chunk
+```{r}
+idx = which(is.na(df.combined$Exterior1st) | is.na(df.combined$Exterior2nd))
+df.combined[idx,c('Exterior1st', 'Exterior2nd')]
+df.combined$Exterior1st[is.na(df.combined$Exterior1st)] = 'Other'
+df.combined$Exterior2nd[is.na(df.combined$Exterior2nd)] = 'Other'
+```
+
+#SaleType
+```{r}
+idx = which(is.na(df.combined$SaleType) )
+df.combined$SaleType[]
+```
