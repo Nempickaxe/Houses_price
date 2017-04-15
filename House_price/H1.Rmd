@@ -8,13 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-```{r}
+```{r library_import, message=FALSE}
 library(ggplot2)
 library(stringr)
 library(dplyr)
 ```
 
-```{r}
+```{r dataset import}
 train = read.csv('train.csv', stringsAsFactors = FALSE)
 test = read.csv('test.csv', stringsAsFactors = FALSE)
 ```
@@ -31,7 +31,7 @@ sort(colSums(sapply(df.combined[na.cols], is.na)), decreasing = TRUE)
 paste('No. of columns with missing values:', length(na.cols) )
 ```
 
-#helper function for plotting categoric data for easier data visualization
+###helper function for plotting categoric data for easier data visualization
 ```{r}
 plot.categoric = function(cols, df){
   for (col in cols) {
@@ -51,7 +51,7 @@ plot.categoric = function(cols, df){
 }
 ```
 
-#Pool chunk
+###Pool chunk
 ```{r}
 pool.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Pool'))]
 df.combined[is.na(df.combined$PoolQC) & (df.combined$PoolArea > 0), c('PoolQC','PoolArea')]
@@ -67,7 +67,7 @@ df.combined$PoolQC[is.na(df.combined$PoolQC)] = 'None'
 
 ```
 
-#Garage Chunk
+###Garage Chunk
 ```{r}
 length(which(df.combined$GarageYrBlt == df.combined$YearBuilt))
 
@@ -83,8 +83,8 @@ df.combined[,c(garage.cols)] %>%
   group_by(GarageType) %>%
     summarise(median0 = median(GarageCars, na.rm=TRUE), median1 = median(GarageArea, na.rm=TRUE), counts = n())
 
-#Treating NA's in Cars and Area field
-# for Detchd
+###Treating NA's in Cars and Area field
+### for Detchd
 df.combined[is.na(df.combined$GarageArea),garage.cols]
 df.combined[2577, 'GarageArea'] <- 399.5
 df.combined[2577, 'GarageCars'] <- 2
@@ -112,7 +112,7 @@ for (col in garage.cols){
 }
 ```
 
-#Kitchen and Electrical Chunk
+###Kitchen and Electrical Chunk
 ```{r}
 plot.categoric('KitchenQual', df.combined)
 df.combined$KitchenQual[is.na(df.combined$KitchenQual)] = 'TA'
@@ -120,7 +120,7 @@ plot.categoric('Electrical', df.combined)
 df.combined$Electrical[is.na(df.combined$Electrical)] = 'SBrkr'
 ```
 
-#Basement Chunk
+###Basement Chunk
 ```{r}
 bsmt.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Bsmt'))]
 
@@ -138,7 +138,7 @@ for (col in bsmt.cols){
 }
 ```
 
-#Exterior Chunk
+###Exterior Chunk
 ```{r}
 idx = which(is.na(df.combined$Exterior1st) | is.na(df.combined$Exterior2nd))
 df.combined[idx,c('Exterior1st', 'Exterior2nd')]
@@ -146,8 +146,98 @@ df.combined$Exterior1st[is.na(df.combined$Exterior1st)] = 'Other'
 df.combined$Exterior2nd[is.na(df.combined$Exterior2nd)] = 'Other'
 ```
 
-#SaleType
+###SaleType Chunk
 ```{r}
 idx = which(is.na(df.combined$SaleType) )
-df.combined$SaleType[]
+df.combined[idx, 'SaleCondition']
+table(df.combined$SaleCondition, df.combined$SaleType)
+df.combined[idx, 'SaleType'] <- 'WD'
 ```
+
+###Functional Chunk
+```{r}
+table(df.combined$Functional)
+idx = which(is.na(df.combined$Functional))
+df.combined[idx, 'Functional'] <- 'Typ'
+```
+
+###Utilities Chunk
+```{r}
+table(df.combined$Utilities)
+df.combined$Utilities <- NULL
+```
+
+###MS Chunk
+```{r}
+MS.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'MS'))]
+
+idx = which(is.na(df.combined$MSZoning))
+df.combined[idx, 'MSSubClass']
+table(df.combined$MSSubClass, df.combined$MSZoning)
+df.combined[idx,c('MSZoning','MSSubClass')]
+df.combined$MSZoning[c(1916, 2251)] <- 'RM'
+df.combined$MSZoning[c(2217, 2905)] <- 'RL'
+```
+
+###Msn Chunk
+```{r}
+df.combined[(is.na(df.combined$MasVnrType)) | (is.na(df.combined$MasVnrArea)), c('MasVnrType', 'MasVnrArea')]
+
+df.combined[,c('MasVnrType','MasVnrArea')] %>%
+  group_by(MasVnrType) %>%
+    summarise(median0 = median(MasVnrArea, na.rm=TRUE), counts = n())
+
+df.combined[2611, 'MasVnrType'] <- 'BrkFace'
+
+df.combined$MasVnrType[is.na(df.combined$MasVnrType)] = 'None'
+df.combined$MasVnrArea[is.na(df.combined$MasVnrArea)] = 0
+```
+
+###LotFrontage Chunk
+```{r}
+lot.by.nbrh <- df.combined[,c('Neighborhood','LotFrontage')] %>%
+  group_by(Neighborhood) %>%
+  summarise(median = median(LotFrontage, na.rm = TRUE))
+
+idx = which(is.na(df.combined$LotFrontage))
+
+for (i in idx){
+  lot.median = lot.by.nbrh[lot.by.nbrh == df.combined$Neighborhood[i],'median']
+  df.combined[i,'LotFrontage'] = lot.median[[1]]
+}
+```
+
+###Fence Chunk
+```{r}
+table(df.combined$Fence)
+df.combined$Fence[is.na(df.combined$Fence)] = 'None'
+```
+
+###MiscFeature Chunk
+```{r}
+df.combined$MiscFeature[is.na(df.combined$MiscFeature)] = 'None'
+```
+
+###FirePlace Chunk
+```{r}
+Fire.cols = names(df.combined)[sapply(names(df.combined), function(x) str_detect(x, 'Fire'))]
+
+which((df.combined$Fireplaces > 0) & (is.na(df.combined$FireplaceQu)))
+df.combined$FireplaceQu[is.na(df.combined$FireplaceQu)] = 'None'
+```
+
+###Alley Chunk
+```{r}
+df.combined$Alley[is.na(df.combined$Alley)] = 'None'
+```
+
+```{r}
+paste('There are', sum(sapply(df.combined, is.na)), 'missing values left')
+```
+
+##Numeric or Categorical Feature
+```{r}
+num_features = names(which(sapply(df.combined, is.numeric)))
+cat_features = names(which(sapply(df.combined, is.character)))
+```
+
