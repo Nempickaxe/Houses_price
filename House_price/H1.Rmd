@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(stringr)
 library(dplyr)
+library(corrplot)
 ```
 
 ```{r dataset import}
@@ -237,7 +238,109 @@ paste('There are', sum(sapply(df.combined, is.na)), 'missing values left')
 
 ##Numeric or Categorical Feature
 ```{r}
+df.numeric = df.combined[num_features]
+
 num_features = names(which(sapply(df.combined, is.numeric)))
 cat_features = names(which(sapply(df.combined, is.character)))
+
+group.df = df.combined[1:1460,]
+group.df$SalePrice = train$SalePrice
+
+# function that groups a column by its features and returns the mdedian saleprice for each unique feature. 
+group.prices = function(col) {
+  group.table = group.df[,c(col, 'SalePrice', 'OverallQual')] %>%
+    group_by_(col) %>%
+    summarise(mean.Quality = round(mean(OverallQual),2),
+      mean.Price = mean(SalePrice), n = n()) %>%
+    arrange(mean.Quality, mean.Price)
+    
+  print(qplot(x=reorder(group.table[[col]], -group.table[['mean.Price']]), y=group.table[['mean.Price']]) +
+    geom_bar(stat='identity', fill='#00A4CC') +
+    theme_minimal() +
+    #scale_y_continuous(labels = dollar) +
+    labs(x=col, y='Mean SalePrice') +
+    theme(axis.text.x = element_text(angle = 45))) +
+    #geom_text(aes(label = sort(median.Price)), vjust = -0.5)
+  
+  return(data.frame(group.table))
+}
+
+# function that maps a categoric value to its corresponding numeric value and returns that column to the data frame
+map.fcn = function(cols, map.list, df){
+  for (col in cols){
+    df[col] = as.numeric(map.list[df.combined[,col]])
+  }
+  return(df)
+}
+
+qual.list = c('None' = 0, 'Po' = 1, 'Fa' = 2, 'TA' = 3, 'Gd' = 4, 'Ex' = 5)
+qual.cols = c('ExterQual', 'ExterCond', 'GarageQual', 'GarageCond', 'FireplaceQu', 'KitchenQual', 'HeatingQC', 'BsmtQual')
+
+df.numeric = map.fcn(qual.cols, qual.list, df.numeric)
+```
+
+###BsmtExposure, BsmtFinType1
+```{r}
+group.prices('BsmtExposure')
+bsmt.levels = c('None' = 0, 'No' = 1, 'Mn' = 2, 'Av' = 3, 'Gd' = 4)
+df.numeric = map.fcn(c('BsmtExposure'), bsmt.levels, df.numeric)
+
+group.prices('BsmtFinType1')
+
+df.combined[, c('BsmtFinType1', 'BsmtFinSF1')] %>%
+  group_by(BsmtFinType1) %>%
+  summarise(medianArea = median(BsmtFinSF1), counts = n()) %>%
+  arrange(medianArea) %>%
+  ggplot(aes(x = reorder(BsmtFinType1, -medianArea), y = medianArea)) +
+  geom_bar(stat = 'identity', fill='#00A4CC') +
+  labs(x='BsmtFinType2', y='Median of BsmtFinSF2') +
+  geom_text(aes(label = sort(medianArea)), vjust = -0.5) +
+  theme_minimal() +
+  scale_y_continuous(limits = c(0,850))
+
+bsmt.fin.list = c('None' = 1, 'Unf' = 1, 'LwQ' = 2,'Rec'= 3, 'BLQ' = 4, 'ALQ' = 5, 'GLQ' = 6)
+df.numeric = map.fcn(c('BsmtFinType1','BsmtFinType2'), bsmt.fin.list, df.numeric)
+```
+
+###Functional
+```{r}
+group.prices('Functional')
+functional.levels = c('None'=0, 'Min2'=1, 'Maj2'=2, 'Min1'=3, 'Mod'=4, 'Maj1'=5, 'Sev'=6, 'Typ'=7)
+df.numeric = map.fcn(c('Functional'), functional.levels, df.numeric)
+```
+
+###GarageFinish, Fences
+```{r}
+group.prices('GarageFinish')
+garage.fin.list = c('None' = 0,'Unf' = 1, 'RFn' = 1, 'Fin' = 2)
+df.numeric = map.fcn(c('GarageFinish'), functional.levels, df.numeric)
+
+group.prices('Fence')
+fence.levels = c('GdWo'=0, 'MnWw'=1, 'MnPrv'=2, 'None'=3, 'GdPrv'=4)
+df.numeric = map.fcn(c('Fence'), fence.levels, df.numeric)
+
+group.prices('MSSubClass')
+MSSubClass.levels = c('30'=0, '180'=1, '90'=2, '190'=3, '50'=4, '85'=5,
+                      '45'=6, '40'=7, '80'=8, '20'=9, '70'=10, '160'=11,
+                      '75'=12, '120'=13, '60'=14)
+df.numeric['NewerDwelling'] = as.numeric(MSSubClass.levels[as.character(df.combined$MSSubClass)])
+```
+
+```{r}
+# need the SalePrice column
+corr.df = cbind(df.numeric[1:1460,], train['SalePrice'])
+
+# only using the first 1460 rows - training data
+correlations = cor(corr.df)
+
+corr.SalePrice = as.matrix(sort(correlations[,'SalePrice'], decreasing = TRUE))
+corr.idx = names(which(apply(corr.SalePrice, 1, function(x) (x > 0.5 | x < -0.5))))
+
+corrplot(as.matrix(correlations[corr.idx,corr.idx]), type = 'upper', method='color', addCoef.col = TRUE, tl.cex = 0.7,cl.cex = 0.7, number.cex=0.7)
+```
+
+```{r}
+library(GGally)
+ggpairs(corr.df[, corr.idx[1:6]])
 ```
 
