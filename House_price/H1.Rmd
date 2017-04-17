@@ -13,6 +13,7 @@ library(ggplot2)
 library(stringr)
 library(dplyr)
 library(corrplot)
+require(scales) # plotting $$
 ```
 
 ```{r dataset import}
@@ -238,10 +239,11 @@ paste('There are', sum(sapply(df.combined, is.na)), 'missing values left')
 
 ##Numeric or Categorical Feature
 ```{r}
-df.numeric = df.combined[num_features]
 
 num_features = names(which(sapply(df.combined, is.numeric)))
 cat_features = names(which(sapply(df.combined, is.character)))
+
+df.numeric = df.combined[num_features]
 
 group.df = df.combined[1:1460,]
 group.df$SalePrice = train$SalePrice
@@ -313,7 +315,7 @@ df.numeric = map.fcn(c('Functional'), functional.levels, df.numeric)
 ```{r}
 group.prices('GarageFinish')
 garage.fin.list = c('None' = 0,'Unf' = 1, 'RFn' = 1, 'Fin' = 2)
-df.numeric = map.fcn(c('GarageFinish'), functional.levels, df.numeric)
+df.numeric = map.fcn(c('GarageFinish'), garage.fin.list, df.numeric)
 
 group.prices('Fence')
 fence.levels = c('GdWo'=0, 'MnWw'=1, 'MnPrv'=2, 'None'=3, 'GdPrv'=4)
@@ -342,5 +344,108 @@ corrplot(as.matrix(correlations[corr.idx,corr.idx]), type = 'upper', method='col
 ```{r}
 library(GGally)
 ggpairs(corr.df[, corr.idx[1:6]])
+```
+
+```{r}
+df.numeric['RegularLotShape'] = (df.combined$LotShape == 'Reg') * 1
+df.numeric['LandLeveled'] = (df.combined$LandContour == 'Lvl') * 1
+df.numeric['LandSlopeGentle'] = (df.combined$LandSlope == 'Gtl') * 1
+df.numeric['ElectricalSB'] = (df.combined$Electrical == 'SBrkr') * 1
+df.numeric['GarageDetchd'] = (df.combined$GarageType == 'Detchd') * 1
+df.numeric['HasPavedDrive'] = (df.combined$PavedDrive == 'Y') * 1
+df.numeric['HasWoodDeck'] = (df.combined$WoodDeckSF > 0) * 1
+df.numeric['Has2ndFlr'] = (df.combined$X2ndFlrSF > 0) * 1
+df.numeric['HasMasVnr'] = (df.combined$MasVnrArea > 0) * 1
+df.numeric['HasShed'] = (df.combined$MiscFeature == 'Shed') * 1
+```
+
+###Yr
+```{r}
+df.numeric['Remodeled'] = (df.combined$YearBuilt != df.combined$YearRemodAdd) * 1
+df.numeric['RecentRemodel'] = (df.combined$YearRemodAdd >= df.combined$YrSold) * 1
+df.numeric['NewHouse'] = (df.combined$YearBuilt == df.combined$YrSold) * 1
+
+#cols.binary = c('X2ndFlrSF', 'MasVnrArea', 'WoodDeckSF')
+cols.binary = c('X2ndFlrSF', 'MasVnrArea', 'WoodDeckSF', 'OpenPorchSF', 'EnclosedPorch', 'X3SsnPorch', 'ScreenPorch')
+
+for (col in cols.binary){
+  df.numeric[str_c('Has',col)] = (df.combined[,col] == 0) * 1
+}
+```
+
+```{r}
+ggplot(df.combined, aes(x=MoSold)) +
+  geom_bar(fill = 'cornflowerblue') +
+  geom_text(aes(label=..count..), stat='count', vjust = -.5) +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+
+df.numeric['HighSeason'] = (df.combined$MoSold %in% c(5,6,7)) * 1
+```
+
+#Neighbour
+```{r}
+train[,c('Neighborhood','SalePrice')] %>%
+  group_by(Neighborhood) %>%
+  summarise(median.price = median(SalePrice, na.rm = TRUE)) %>%
+  arrange(median.price) %>%
+  mutate(nhbr.sorted = factor(Neighborhood, levels=Neighborhood)) %>%
+  ggplot(aes(x=nhbr.sorted, y=median.price)) +
+  geom_point() +
+  geom_text(aes(label = median.price, angle = 45), vjust = 2) +
+  theme_minimal() +
+  labs(x='Neighborhood', y='Median price') +
+  theme(text = element_text(size=12),
+        axis.text.x = element_text(angle=45))
+
+
+other.nbrh = unique(df.combined$Neighborhood)[!unique(df.combined$Neighborhood) %in% c('StoneBr', 'NoRidge','NridgHt')]
+
+ggplot(train, aes(x=SalePrice, y=GrLivArea, colour=Neighborhood)) +
+  geom_point(shape=16, alpha=.8, size=4) +
+  scale_color_manual(limits = c(other.nbrh, 'StoneBr', 'NoRidge', 'NridgHt'), values = c(rep('black', length(other.nbrh)), 'indianred', 'cornflowerblue', 'darkseagreen')) +
+  theme_minimal() +
+  scale_x_continuous(label=dollar)
+
+nbrh.rich = c('Crawfor', 'Somerst, Timber', 'StoneBr', 'NoRidge', 'NridgeHt')
+df.numeric['NbrhRich'] = (df.combined$Neighborhood %in% nbrh.rich) *1
+
+group.prices('Neighborhood')
+
+nbrh.map = c('MeadowV' = 0, 'IDOTRR' = 1, 'Sawyer' = 1, 'BrDale' = 1, 'OldTown' = 1, 'Edwards' = 1, 
+             'BrkSide' = 1, 'Blueste' = 1, 'SWISU' = 2, 'NAmes' = 2, 'NPkVill' = 2, 'Mitchel' = 2,
+             'SawyerW' = 2, 'Gilbert' = 2, 'NWAmes' = 2, 'Blmngtn' = 2, 'CollgCr' = 2, 'ClearCr' = 3, 
+             'Crawfor' = 3, 'Veenker' = 3, 'Somerst' = 3, 'Timber' = 3, 'StoneBr' = 4, 'NoRidge' = 4, 
+             'NridgHt' = 4)
+
+df.numeric['NeighborhoodBin'] = as.numeric(nbrh.map[df.combined$Neighborhood])
+```
+
+###SaleCondition
+```{r}
+df.numeric['PartialPlan'] = (df.combined$SaleCondition == 'Partial') * 1
+```
+
+#Heating
+```{r}
+heating.list = c('Po' = 0, 'Fa' = 1, 'TA' = 2, 'Gd' = 3, 'Ex' = 4)
+df.numeric = map.fcn(c('HeatingQC'), heating.list, df.numeric)
+```
+
+```{r}
+area.cols = c('LotFrontage', 'LotArea', 'MasVnrArea', 'BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF',
+             'TotalBsmtSF', 'X1stFlrSF', 'X2ndFlrSF', 'GrLivArea', 'GarageArea', 'WoodDeckSF', 
+             'OpenPorchSF', 'EnclosedPorch', 'X3SsnPorch', 'ScreenPorch', 'LowQualFinSF', 'PoolArea')
+
+df.numeric['TotalArea'] = as.numeric(rowSums(df.combined[,area.cols]))
+
+df.numeric['AreaInside'] = as.numeric(df.combined$X1stFlrSF + df.combined$X2ndFlrSF)
+
+df.numeric['Age'] = as.numeric(2010 - df.combined$YearBuilt)
+
+df.numeric['TimeSinceSold'] = as.numeric(2010 - df.combined$YrSold)
+
+# how many years since the house was remodelled and sold 
+df.numeric['YearSinceRemodel'] = as.numeric(df.combined$YrSold - df.combined$YearRemodAdd)
 ```
 
