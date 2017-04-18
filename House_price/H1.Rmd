@@ -14,6 +14,7 @@ library(stringr)
 library(dplyr)
 library(corrplot)
 require(scales) # plotting $$
+require(GGally)
 ```
 
 ```{r dataset import}
@@ -447,5 +448,48 @@ df.numeric['TimeSinceSold'] = as.numeric(2010 - df.combined$YrSold)
 
 # how many years since the house was remodelled and sold 
 df.numeric['YearSinceRemodel'] = as.numeric(df.combined$YrSold - df.combined$YearRemodAdd)
+```
+
+Plots
+```{r}
+train.test.df = rbind(select(train,-SalePrice), test)
+train.test.df$type = c(rep('train',1460),rep('test',1459))
+
+ggplot(data = train, aes(x = GrLivArea)) + geom_histogram(fill = 'indianred', color = 'black', bins = 30) + theme_minimal()
+
+outliers_value = boxplot.stats(train$GrLivArea)$out
+boxplot(train$GrLivArea, main="GrLivArea", boxwex=0.1)
+mtext(paste("Outliers:", paste(outliers_value[outliers_value > 4000], collapse = ',')), cex = 0.6)
+
+ggplot(data = train, aes(x = GrLivArea, y= SalePrice)) + geom_point(color = 'darkseagreen') + theme_minimal()
+idx.outliers = which(train$GrLivArea > 4000 & train$SalePrice < 400000)
+df.numeric = df.numeric[!1:nrow(df.numeric) %in% idx.outliers,]
+```
+
+Kurtosis measures the taildness of the distribution. For skewnesses outside the range of -0.8 to 0.8 and kurtosises outside the of -3.0 to 3.0 do not satisfy the assumption of normality
+##Skew and kurtosis
+```{r}
+require(psych)
+skewed = apply(df.numeric, 2, FUN = skew)
+skewed = skewed[skewed > 0.8 | skewed < -0.8]
+
+kurtosis = apply(df.numeric, 2, FUN = kurtosi)
+kurtosis = kurtosis[kurtosis > 3.0 | kurtosis < -3.0]
+
+```
+
+```{r}
+era = function(x){as.integer((x-1872)/20)}
+df.numeric['YearBuilt'] = apply(df.numeric['YearBuilt'], 2, era)
+df.numeric['YearRemodAdd'] = apply(df.numeric['YearRemodAdd'], 2, era)
+df.numeric['GarageYrBlt'] = apply(df.numeric['GarageYrBlt'], 2, era)
+df.numeric['YrSold'] = apply(df.numeric['YrSold'], 2, era)
+
+```
+
+```{r}
+train_data = df.numeric[1:1458, ] #removed 2 train data points as outliers
+test_data = df.numeric[1459:nrow(df.numeric), ]
+a = log1p(df.numeric[, names(skewed)])
 ```
 
